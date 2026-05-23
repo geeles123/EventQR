@@ -1,15 +1,57 @@
+# Gradle
+.gradle/
+build/
+*/build/
+.gradle-cache/
+
+# Android Studio / IntelliJ
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.ipr
+*.iws
+out/
+
+# Local machine config
 local.properties
+
+# Kotlin
+.kotlin/
+
+# Generated files
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.aab
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keystores / signing files
+*.jks
+*.keystore
+*.pem
+*.p12
+*.key
+
+# Environment / secrets
+.env
+.env.*
+secrets.properties
+
+# Firebase / Google config
+google-services.json
+
+# Testing / reports
+test-results/
+reports/
+coverage/
+*.ec
+
+# Dependency lock/cache files usually not needed
+*.hprof
