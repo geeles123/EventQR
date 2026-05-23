@@ -3,22 +3,27 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA">
+    android:background="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/gradient_top"
+        android:layout_height="220dp"
+        android:background="@drawable/background_gradient"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingHorizontal="32dp"
-        android:paddingVertical="40dp">
+        android:paddingVertical="20dp">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="100dp"
+            android:src="@drawable/white_logo_no_bg"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create Account"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/white"
             android:textSize="36sp"
             android:textStyle="bold"
             android:letterSpacing="0.01"
@@ -28,7 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join us and secure your digital life"
-            android:textColor="#FFB3B3"
+            android:textColor="@color/white"
             android:textSize="14sp"
             android:letterSpacing="0.01" />
 
@@ -61,7 +66,7 @@
                     android:text="Full Name"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textColor="#6B7280"
+                    android:textColor="@color/white"
                     android:layout_marginBottom="8dp"
                     android:letterSpacing="0.02" />
 
@@ -94,7 +99,7 @@
                     android:text="Email Address"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textColor="#6B7280"
+                    android:textColor="@color/white"
                     android:layout_marginBottom="8dp"
                     android:letterSpacing="0.02" />
 
@@ -127,7 +132,7 @@
                     android:text="Password"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textColor="#6B7280"
+                    android:textColor="@color/white"
                     android:layout_marginBottom="8dp"
                     android:letterSpacing="0.02" />
 
@@ -160,7 +165,7 @@
                     android:text="Confirm Password"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textColor="#6B7280"
+                    android:textColor="@color/white"
                     android:layout_marginBottom="8dp"
                     android:letterSpacing="0.02" />
 
@@ -187,10 +192,9 @@
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/button_gradient"
-                android:elevation="6dp"
-                android:layout_marginBottom="24dp" />
+                android:textColor="@color/white"
+                android:background="@drawable/button_rounded"
+                android:elevation="6dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -230,7 +234,7 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
-                android:background="@drawable/button_gradient"
+                android:background="@drawable/button_rounded"
                 android:elevation="2dp" />
 
         </LinearLayout>
