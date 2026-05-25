@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6"
+    android:fillViewport="true">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Manage Users" android:textColor="@color/black" android:textSize="26sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnLoadManageUsers" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/button_rounded" android:text="Refresh Users" android:textAllCaps="false" android:textColor="@color/white" />
+        <EditText android:id="@+id/edtTargetUserId" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Target user ID" android:padding="14dp" />
+        <EditText android:id="@+id/edtUserEmail" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Email" android:padding="14dp" />
+        <EditText android:id="@+id/edtUserFullName" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Full name" android:padding="14dp" />
+        <EditText android:id="@+id/edtUserPhone" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Phone" android:padding="14dp" />
+        <Spinner android:id="@+id/spnUserRole" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" />
+        <Button android:id="@+id/btnCreateUser" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/button_rounded" android:text="Create User" android:textAllCaps="false" android:textColor="@color/white" />
+        <Button android:id="@+id/btnChangeRole" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="10dp" android:background="@drawable/transparent_alt" android:text="Change Role" android:textAllCaps="false" android:textColor="#1F2937" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerManageUsers" android:layout_width="match_parent" android:layout_height="320dp" android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

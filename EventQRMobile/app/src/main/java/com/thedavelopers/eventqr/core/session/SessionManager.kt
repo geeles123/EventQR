@@ -1,0 +1,52 @@
+package com.thedavelopers.eventqr.core.session
+
+import android.content.Context
+import com.thedavelopers.eventqr.core.api.dto.AccountRole
+import com.thedavelopers.eventqr.features.auth.model.dto.LoginResponse
+
+class SessionManager(context: Context) {
+    private val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    fun saveLoginResponse(loginResponse: LoginResponse) {
+        sharedPreferences.edit()
+            .putString(KEY_AUTH_TOKEN, loginResponse.accessToken.ifBlank { PLACEHOLDER_TOKEN })
+            .putString(KEY_USER_ID, loginResponse.userId.toString())
+            .putString(KEY_EMAIL, loginResponse.email)
+            .putString(KEY_FULL_NAME, loginResponse.fullName)
+            .putString(KEY_ROLE, loginResponse.role?.name)
+            .apply()
+    }
+
+    fun saveRole(role: AccountRole?) {
+        sharedPreferences.edit().putString(KEY_ROLE, role?.name).apply()
+    }
+
+    fun clearSession() {
+        sharedPreferences.edit().clear().apply()
+    }
+
+    fun getAuthToken(): String? = sharedPreferences.getString(KEY_AUTH_TOKEN, null)
+
+    fun getUserId(): String? = sharedPreferences.getString(KEY_USER_ID, null)
+
+    fun getUserRole(): String? = sharedPreferences.getString(KEY_ROLE, null)
+
+    fun getEmail(): String? = sharedPreferences.getString(KEY_EMAIL, null)
+
+    fun getFullName(): String? = sharedPreferences.getString(KEY_FULL_NAME, null)
+
+    fun hasUsableToken(): Boolean {
+        val token = getAuthToken().orEmpty()
+        return token.isNotBlank() && token != PLACEHOLDER_TOKEN
+    }
+
+    companion object {
+        const val PREFS_NAME = "eventqr_session"
+        const val PLACEHOLDER_TOKEN = "JWT_NOT_CONFIGURED"
+        private const val KEY_AUTH_TOKEN = "auth_token"
+        private const val KEY_USER_ID = "user_id"
+        private const val KEY_ROLE = "role"
+        private const val KEY_EMAIL = "email"
+        private const val KEY_FULL_NAME = "full_name"
+    }
+}

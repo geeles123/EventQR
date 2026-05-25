@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Event Registration"
+            android:textColor="@color/black"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/edtRegistrationFullName"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Full name"
+            android:inputType="textPersonName"
+            android:padding="14dp"
+            android:textColor="#111827" />
+
+        <EditText
+            android:id="@+id/edtRegistrationEmail"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:padding="14dp"
+            android:textColor="#111827" />
+
+        <EditText
+            android:id="@+id/edtRegistrationPhone"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Phone number"
+            android:inputType="phone"
+            android:padding="14dp"
+            android:textColor="#111827" />
+
+        <Button
+            android:id="@+id/btnSubmitRegistration"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/button_rounded"
+            android:text="Register"
+            android:textAllCaps="false"
+            android:textColor="@color/white" />
+    </LinearLayout>
+</ScrollView>

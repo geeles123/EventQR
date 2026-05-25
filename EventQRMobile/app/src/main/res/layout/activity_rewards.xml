@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_gradient"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rewards"
+            android:textColor="@color/white"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtRewardsBalance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/white" />
+
+        <TextView
+            android:id="@+id/txtRewardsLoading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Loading rewards..."
+            android:textColor="@color/white"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/edtRewardsEventId"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/edittext_bg"
+        android:hint="Event ID"
+        android:padding="14dp" />
+
+    <Button
+        android:id="@+id/btnLoadRewards"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/button_rounded"
+        android:text="Load Rewards"
+        android:textAllCaps="false"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/txtRewardsEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="No rewards configured for this event yet."
+        android:textColor="#4B5563" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerRewards"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp" />
+</LinearLayout>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ID Printing"
+            android:textColor="@color/black"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/edtPrintEventId"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Event ID"
+            android:padding="14dp" />
+
+        <EditText
+            android:id="@+id/edtPrintQrCredentialId"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="QR Credential ID"
+            android:padding="14dp" />
+
+        <EditText
+            android:id="@+id/edtPrintStaffUserId"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Staff User ID"
+            android:padding="14dp" />
+
+        <CheckBox
+            android:id="@+id/chkReprint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Reprint" />
+
+        <Button
+            android:id="@+id/btnPrintId"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/button_rounded"
+            android:text="Print"
+            android:textAllCaps="false"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/btnLoadPrintLogs"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/transparent_alt"
+            android:text="Load Print Logs"
+            android:textAllCaps="false"
+            android:textColor="#1F2937" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerIdPrintLogs"
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

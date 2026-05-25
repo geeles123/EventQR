@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6"
+    android:fillViewport="true">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Scan Purposes" android:textColor="@color/black" android:textSize="26sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnLoadScanPurposes" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/button_rounded" android:text="Refresh Purposes" android:textAllCaps="false" android:textColor="@color/white" />
+        <EditText android:id="@+id/edtScanPurposeEventId" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Event ID" android:padding="14dp" />
+        <EditText android:id="@+id/edtScanPurposeName" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Name" android:padding="14dp" />
+        <Spinner android:id="@+id/spnScanPurposeCode" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" />
+        <CheckBox android:id="@+id/chkScanPurposeActive" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="Active" />
+        <CheckBox android:id="@+id/chkScanPurposeTrackingOnly" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="Tracking only" />
+        <EditText android:id="@+id/edtScanPurposeDescription" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/edittext_bg" android:hint="Description" android:padding="14dp" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
+            <Button android:id="@+id/btnScanPurposeEntry" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Entry" android:textAllCaps="false" />
+            <Button android:id="@+id/btnScanPurposeAttendance" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Attendance" android:textAllCaps="false" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Button android:id="@+id/btnScanPurposeBenefitClaim" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Benefit" android:textAllCaps="false" />
+            <Button android:id="@+id/btnScanPurposeBoothVisit" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Booth" android:textAllCaps="false" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Button android:id="@+id/btnScanPurposeSessionVisit" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Session" android:textAllCaps="false" />
+            <Button android:id="@+id/btnScanPurposeRewardRedemption" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Reward" android:textAllCaps="false" />
+        </LinearLayout>
+        <Button android:id="@+id/btnScanPurposeExit" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Exit" android:textAllCaps="false" />
+
+        <Button android:id="@+id/btnCreateScanPurpose" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:background="@drawable/button_rounded" android:text="Create Scan Purpose" android:textAllCaps="false" android:textColor="@color/white" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerManageScanPurposes" android:layout_width="match_parent" android:layout_height="320dp" android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

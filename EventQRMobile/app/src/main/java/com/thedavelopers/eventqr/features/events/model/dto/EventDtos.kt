@@ -1,0 +1,43 @@
+package com.thedavelopers.eventqr.features.events.model.dto
+
+import com.thedavelopers.eventqr.core.api.dto.EventStatus
+import java.time.Instant
+import java.util.UUID
+
+data class EventRequest(
+    val title: String,
+    val description: String? = null,
+    val location: String? = null,
+    val registrationOpenAt: Instant? = null,
+    val registrationCloseAt: Instant? = null,
+    val eventStartAt: Instant? = null,
+    val eventEndAt: Instant? = null,
+    val capacity: Int,
+    val rewardsEnabled: Boolean,
+    val organizerUserId: UUID,
+)
+
+data class EventApprovalRequest(
+    val approved: Boolean,
+    val reviewerUserId: UUID? = null,
+    val rejectionReason: String? = null,
+)
+
+data class EventResponse(
+    val eventId: UUID,
+    val title: String,
+    val description: String? = null,
+    val location: String? = null,
+    val registrationOpenAt: Instant? = null,
+    val registrationCloseAt: Instant? = null,
+    val eventStartAt: Instant? = null,
+    val eventEndAt: Instant? = null,
+    val capacity: Int,
+    val currentAttendeeCount: Int,
+    val status: EventStatus,
+    val rewardsEnabled: Boolean,
+    val organizerUserId: UUID? = null,
+    val approvedByUserId: UUID? = null,
+    val approvedAt: Instant? = null,
+    val rejectionReason: String? = null,
+)
