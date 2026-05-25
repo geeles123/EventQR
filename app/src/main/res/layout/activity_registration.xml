@@ -193,6 +193,30 @@
                 android:textColor="#656565"
                 />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Confirm Password"
+                android:textStyle="bold"
+                android:id="@+id/txtConfirmPassword"
+                android:paddingBottom="5dp"
+                android:textColor="@color/black"
+                android:layout_marginTop="10dp"/>
+
+            <EditText
+                android:id="@+id/edtConfirmPassword"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:drawableStart="@drawable/password_icon"
+                android:drawablePadding="10dp"
+                android:drawableTint="#808080"
+                android:hint="**********"
+                android:inputType="textPassword"
+                android:padding="15dp"
+                android:textSize="15sp"
+                android:background="@drawable/edittext_bg"
+                android:textColor="#656565"
+                />
 
 
             <Button
@@ -217,7 +241,7 @@
 
                 <View
                     android:layout_width="0dp"
-                    android:layout_height="5dp"
+                    android:layout_height="1dp"
                     android:layout_weight="1"
                     android:background="#E5E7EB" />
 

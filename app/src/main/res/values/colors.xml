@@ -6,4 +6,8 @@
     <color name="green">#10B981</color>
     <color name="white">#F3F4F6</color>
     <color name="black">#1F2937</color>
+
+    <color name="splash_gradient_start">#5B21B6</color>
+    <color name="splash_gradient_center">#312E81</color>
+    <color name="splash_gradient_end">#0F172A</color>
 </resources>

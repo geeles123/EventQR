@@ -11,12 +11,11 @@ class Registration : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registration)
 
-        val etFirstName = findViewById<EditText>(R.id.etFirstName)
-        val etMiddleInitial = findViewById<EditText>(R.id.etMiddleInitial)
-        val etLastName = findViewById<EditText>(R.id.etLastName)
-        val etEmail = findViewById<EditText>(R.id.etEmail)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
-        val etConfirmPassword = findViewById<EditText>(R.id.etConfirmPassword)
+        val edtFirstName = findViewById<EditText>(R.id.edtFirstName)
+        val edtLastName = findViewById<EditText>(R.id.edtLastName)
+        val edtEmail = findViewById<EditText>(R.id.edtEmail)
+        val edtPassword = findViewById<EditText>(R.id.edtPassword)
+        val edtConfirmPassword = findViewById<EditText>(R.id.edtConfirmPassword)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
         val btnSignIn = findViewById<Button>(R.id.btnSignIn)
 

@@ -19,12 +19,6 @@
             android:exported="false" />
         <activity
             android:name=".Landing"
-            android:exported="false" />
-        <activity
-            android:name=".SignIn"
-            android:exported="false" />
-        <activity
-            android:name=".SplashScreen"
             android:exported="true"
             android:theme="@style/Theme.App.Starting">
             <intent-filter>
@@ -33,6 +27,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".SignIn"
+            android:exported="false" />
     </application>
 
 </manifest>
