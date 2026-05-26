@@ -41,3 +41,16 @@ data class EventResponse(
     val approvedAt: Instant? = null,
     val rejectionReason: String? = null,
 )
+
+data class AttendeeEventResponse(
+    val eventId: UUID,
+    val title: String,
+    val description: String? = null,
+    val location: String? = null,
+    val registrationOpenAt: Instant? = null,
+    val registrationCloseAt: Instant? = null,
+    val eventStartAt: Instant? = null,
+    val eventEndAt: Instant? = null,
+    val capacity: Int = 0,
+    val currentAttendeeCount: Int = 0,
+)

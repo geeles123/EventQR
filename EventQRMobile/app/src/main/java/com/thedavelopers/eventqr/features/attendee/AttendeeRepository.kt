@@ -4,8 +4,7 @@ import android.content.Context
 import com.thedavelopers.eventqr.core.api.ApiClient
 import com.thedavelopers.eventqr.core.api.NetworkResult
 import com.thedavelopers.eventqr.core.api.safeApiCall
-import com.thedavelopers.eventqr.features.events.model.dto.EventResponse
-import com.thedavelopers.eventqr.features.notifications.model.dto.NotificationResponse
+import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
 import com.thedavelopers.eventqr.features.qrcredential.model.dto.QrCredentialSnapshot
 import com.thedavelopers.eventqr.features.registrations.model.dto.RegistrationRequest
 import com.thedavelopers.eventqr.features.registrations.model.dto.RegistrationResponse
@@ -20,7 +19,7 @@ import java.util.UUID
 
 class AttendeeRepository(context: Context) {
     private val apiService = ApiClient.getService(context)
-    suspend fun getEvents() = safeApiCall { apiService.getEvents() }
+    suspend fun getEvents(): NetworkResult<List<AttendeeEventResponse>> = safeApiCall { apiService.getAttendeeVisibleEvents() }
     suspend fun createRegistration(request: RegistrationRequest) = safeApiCall { apiService.createRegistration(request) }
     suspend fun getRegistration(registrationId: String) = safeApiCall { apiService.getRegistration(registrationId) }
     suspend fun getQrCredentialByRegistration(registrationId: String) = safeApiCall { apiService.getQrCredentialByRegistration(registrationId) }

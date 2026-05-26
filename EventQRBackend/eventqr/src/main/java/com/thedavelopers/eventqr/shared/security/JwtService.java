@@ -12,7 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.thedavelopers.eventqr.shared.constants.AccountRole;
+import com.thedavelopers.eventqr.shared.exception.UnauthorizedException;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -40,5 +43,29 @@ public class JwtService {
                 .expiration(Date.from(expiresAt))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    public UUID extractUserIdFromBearer(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Missing session token");
+        }
+        String token = authorizationHeader.substring("Bearer ".length()).trim();
+        if (token.isBlank()) {
+            throw new UnauthorizedException("Missing session token");
+        }
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            String userId = claims.get("userId", String.class);
+            if (userId == null || userId.isBlank()) {
+                userId = claims.getSubject();
+            }
+            return UUID.fromString(userId);
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw new UnauthorizedException("Invalid or expired session");
+        }
     }
 }

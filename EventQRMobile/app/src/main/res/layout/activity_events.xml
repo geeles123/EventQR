@@ -37,6 +37,7 @@
                 android:padding="4dp">
 
                 <TextView
+                    android:id="@+id/tabEventsAll"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -48,6 +49,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tabEventsUpcoming"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -58,6 +60,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tabEventsPast"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -75,7 +78,8 @@
                 android:background="@drawable/bg_card"
                 android:elevation="4dp"
                 android:orientation="vertical"
-                android:padding="18dp">
+                android:padding="18dp"
+                android:visibility="gone">
 
                 <FrameLayout
                     android:layout_width="match_parent"
@@ -83,7 +87,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tech Conference 2024"
+                        android:text=""
                         android:textColor="#000000"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -102,7 +106,7 @@
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_soft_gray_pill"
                     android:gravity="center"
-                    android:text="Upcoming"
+                    android:text=""
                     android:textColor="#000000"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -111,7 +115,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="22dp"
-                    android:text="▣    May 25, 2024 • 9:00 AM"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="17sp" />
 
@@ -119,7 +123,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="⌖    Convention Center"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="17sp" />
 
@@ -133,7 +137,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="♧  Rewards available"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="16sp" />
 
@@ -147,7 +151,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="➤  Your QR code was sent to your email"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="16sp" />
             </LinearLayout>
@@ -159,7 +163,8 @@
                 android:background="@drawable/bg_card"
                 android:elevation="4dp"
                 android:orientation="vertical"
-                android:padding="18dp">
+                android:padding="18dp"
+                android:visibility="gone">
 
                 <FrameLayout
                     android:layout_width="match_parent"
@@ -167,7 +172,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Startup Meetup"
+                        android:text=""
                         android:textColor="#000000"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -186,7 +191,7 @@
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_soft_gray_pill"
                     android:gravity="center"
-                    android:text="Upcoming"
+                    android:text=""
                     android:textColor="#000000"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -195,7 +200,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="22dp"
-                    android:text="▣    May 28, 2024 • 6:00 PM"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="17sp" />
 
@@ -203,7 +208,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="⌖    Innovation Hub"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="17sp" />
 
@@ -217,7 +222,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="➤  Your QR code was sent to your email"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="16sp" />
             </LinearLayout>
@@ -229,12 +234,13 @@
                 android:background="@drawable/bg_card"
                 android:elevation="4dp"
                 android:orientation="vertical"
-                android:padding="18dp">
+                android:padding="18dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="AI Summit 2024"
+                    android:text=""
                     android:textColor="#000000"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -245,7 +251,7 @@
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_teal_pill"
                     android:gravity="center"
-                    android:text="Completed"
+                    android:text=""
                     android:textColor="#0F766E"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -254,7 +260,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="22dp"
-                    android:text="▣    May 15, 2024 • 10:00 AM"
+                    android:text=""
                     android:textColor="#6B7280"
                     android:textSize="17sp" />
             </LinearLayout>
@@ -267,27 +273,40 @@
                 android:gravity="center"
                 android:text="Loading events..."
                 android:textColor="@color/eventqr_muted"
+                android:textSize="15sp"
                 android:visibility="gone" />
 
             <TextView
                 android:id="@+id/txtEventsEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
                 android:gravity="center"
-                android:text="No events available."
+                android:text="No events available yet."
                 android:textColor="@color/eventqr_muted"
+                android:textSize="15sp"
                 android:visibility="gone" />
 
             <Button
                 android:id="@+id/btnRefreshEvents"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_primary_button"
+                android:minWidth="120dp"
+                android:text="Retry"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
                 android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerEvents"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:nestedScrollingEnabled="false"
                 android:visibility="gone" />
         </LinearLayout>
     </ScrollView>

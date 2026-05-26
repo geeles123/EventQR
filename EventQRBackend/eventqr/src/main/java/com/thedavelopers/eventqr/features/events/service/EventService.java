@@ -3,9 +3,11 @@ package com.thedavelopers.eventqr.features.events.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse;
 import com.thedavelopers.eventqr.features.events.model.dto.EventApprovalRequest;
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequest;
 import com.thedavelopers.eventqr.features.events.model.dto.EventResponse;
@@ -22,9 +24,11 @@ import com.thedavelopers.eventqr.shared.port.EventLookupPort.EventSnapshot;
 public class EventService implements EventLookupPort {
 
     private final EventRepository eventRepository;
+    private final JdbcTemplate jdbcTemplate;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, JdbcTemplate jdbcTemplate) {
         this.eventRepository = eventRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public EventResponse create(EventRequest request) {
@@ -66,6 +70,25 @@ public class EventService implements EventLookupPort {
 
     public List<EventResponse> findAllEvents() {
         return eventRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    public List<AttendeeEventResponse> findAttendeeVisibleEvents() {
+        return jdbcTemplate.query("""
+                select id, title, description, location, registration_open_at, registration_close_at,
+                       event_start_at, event_end_at, capacity, current_attendee_count
+                from events
+                order by event_start_at nulls last, created_at desc
+                """, (rs, rowNum) -> new AttendeeEventResponse(
+                rs.getObject("id", UUID.class),
+                rs.getString("title"),
+                rs.getString("description"),
+                rs.getString("location"),
+                rs.getTimestamp("registration_open_at") == null ? null : rs.getTimestamp("registration_open_at").toInstant(),
+                rs.getTimestamp("registration_close_at") == null ? null : rs.getTimestamp("registration_close_at").toInstant(),
+                rs.getTimestamp("event_start_at") == null ? null : rs.getTimestamp("event_start_at").toInstant(),
+                rs.getTimestamp("event_end_at") == null ? null : rs.getTimestamp("event_end_at").toInstant(),
+                rs.getInt("capacity"),
+                rs.getInt("current_attendee_count")));
     }
 
     @Override

@@ -36,7 +36,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="7dp"
-                    android:text="Dharell Dave"
+                    android:text="Attendee"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -83,7 +83,7 @@
                     android:id="@+id/txtTotalRegistrations"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="5"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -110,7 +110,7 @@
                     android:id="@+id/txtTotalEvents"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="12"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -137,7 +137,7 @@
                     android:id="@+id/txtTotalRewards"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="350"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -287,6 +287,7 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/layoutUpcomingEvents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="15dp"
@@ -313,6 +314,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/txtUpcomingEventsViewAll"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="View All"
@@ -328,7 +330,8 @@
                         android:background="@drawable/bg_soft_gray_pill"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:paddingHorizontal="11dp">
+                        android:paddingHorizontal="11dp"
+                        android:visibility="gone">
 
                         <TextView
                             android:layout_width="78dp"
@@ -349,7 +352,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Tech Conference 2024"
+                                android:text=""
                                 android:textColor="#000000"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -358,7 +361,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="May 25, 2024 • 9:00 AM"
+                                android:text=""
                                 android:textColor="#6B7280"
                                 android:textSize="11sp" />
 
@@ -366,7 +369,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="Registered"
+                                android:text=""
                                 android:textColor="#000000"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
@@ -380,7 +383,8 @@
                         android:background="@drawable/bg_soft_gray_pill"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:paddingHorizontal="11dp">
+                        android:paddingHorizontal="11dp"
+                        android:visibility="gone">
 
                         <TextView
                             android:layout_width="78dp"
@@ -401,7 +405,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Startup Meetup"
+                                android:text=""
                                 android:textColor="#000000"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -410,7 +414,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="May 28, 2024 • 6:00 PM"
+                                android:text=""
                                 android:textColor="#6B7280"
                                 android:textSize="11sp" />
 
@@ -418,7 +422,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="Registered"
+                                android:text=""
                                 android:textColor="#000000"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
@@ -427,14 +431,17 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/layoutRecentActivity"
                     android:layout_width="match_parent"
-                    android:layout_height="112dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="23dp"
                     android:background="@drawable/bg_card"
                     android:elevation="4dp"
+                    android:minHeight="112dp"
                     android:orientation="vertical"
                     android:paddingHorizontal="20dp"
-                    android:paddingTop="21dp">
+                    android:paddingTop="21dp"
+                    android:paddingBottom="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"

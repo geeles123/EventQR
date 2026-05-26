@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse;
 import com.thedavelopers.eventqr.features.events.model.dto.EventApprovalRequest;
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequest;
 import com.thedavelopers.eventqr.features.events.model.dto.EventResponse;
@@ -48,5 +49,10 @@ public class EventController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> list() {
         return ResponseEntity.ok(ApiResponse.success(eventService.findAllEvents()));
+    }
+
+    @GetMapping("/attendee-visible")
+    public ResponseEntity<ApiResponse<List<AttendeeEventResponse>>> listAttendeeVisible() {
+        return ResponseEntity.ok(ApiResponse.success(eventService.findAttendeeVisibleEvents()));
     }
 }

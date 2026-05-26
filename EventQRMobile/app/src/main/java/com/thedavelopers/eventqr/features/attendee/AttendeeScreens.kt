@@ -23,8 +23,7 @@ import com.thedavelopers.eventqr.core.api.NetworkResult
 import com.thedavelopers.eventqr.core.session.SessionManager
 import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.core.util.Validators
-import com.thedavelopers.eventqr.features.events.EventAdapter
-import com.thedavelopers.eventqr.features.events.model.dto.EventResponse
+import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
 import com.thedavelopers.eventqr.features.notifications.NotificationAdapter
 import com.thedavelopers.eventqr.features.notifications.model.dto.NotificationResponse
 import com.thedavelopers.eventqr.features.qrcredential.model.dto.QrCredentialSnapshot
@@ -38,6 +37,8 @@ import com.thedavelopers.eventqr.features.transactions.TransactionAdapter
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.util.Comparator.nullsLast
 import java.util.UUID
 
 interface AttendeeView {
@@ -76,7 +77,7 @@ class EventsPresenter(
 
 interface EventsContract {
     interface View : AttendeeView {
-        fun showEvents(items: List<EventResponse>)
+        fun showEvents(items: List<AttendeeEventResponse>)
         fun showError(message: String)
     }
 }
@@ -86,7 +87,13 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: TextView
     private lateinit var loadingView: TextView
-    private lateinit var adapter: EventAdapter
+    private lateinit var retryButton: Button
+    private lateinit var allTab: TextView
+    private lateinit var upcomingTab: TextView
+    private lateinit var pastTab: TextView
+    private lateinit var adapter: AttendeeEventAdapter
+    private var allEvents: List<AttendeeEventResponse> = emptyList()
+    private var selectedFilter: EventFilter = EventFilter.ALL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,12 +104,20 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         recyclerView = findViewById(R.id.recyclerEvents)
         emptyView = findViewById(R.id.txtEventsEmpty)
         loadingView = findViewById(R.id.txtEventsLoading)
-        adapter = EventAdapter { event -> openEventDetail(event) }
+        retryButton = findViewById(R.id.btnRefreshEvents)
+        allTab = findViewById(R.id.tabEventsAll)
+        upcomingTab = findViewById(R.id.tabEventsUpcoming)
+        pastTab = findViewById(R.id.tabEventsPast)
+        adapter = AttendeeEventAdapter { event -> openEventDetail(event) }
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
-        findViewById<Button>(R.id.btnRefreshEvents).setOnClickListener { presenter.loadEvents() }
+        retryButton.setOnClickListener { presenter.loadEvents() }
+        allTab.setOnClickListener { selectFilter(EventFilter.ALL) }
+        upcomingTab.setOnClickListener { selectFilter(EventFilter.UPCOMING) }
+        pastTab.setOnClickListener { selectFilter(EventFilter.PAST) }
+        updateTabs()
         presenter.loadEvents()
     }
 
@@ -111,7 +126,7 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         super.onDestroy()
     }
 
-    private fun openEventDetail(event: EventResponse) {
+    private fun openEventDetail(event: AttendeeEventResponse) {
         startActivity(
             Intent(this, EventDetailActivity::class.java)
                 .putExtra(EXTRA_EVENT_ID, event.eventId.toString())
@@ -120,7 +135,7 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
                 .putExtra(EXTRA_EVENT_DESCRIPTION, event.description ?: "")
                 .putExtra(EXTRA_EVENT_START, DateFormatters.formatInstant(event.eventStartAt))
                 .putExtra(EXTRA_EVENT_END, DateFormatters.formatInstant(event.eventEndAt))
-                .putExtra(EXTRA_EVENT_STATUS, event.status.name)
+                .putExtra(EXTRA_EVENT_STATUS, computedStatusLabel(event))
                 .putExtra(EXTRA_EVENT_CAPACITY, event.capacity.toString())
                 .putExtra(EXTRA_EVENT_COUNT, event.currentAttendeeCount.toString())
         )
@@ -128,22 +143,98 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
 
     override fun showLoading(isLoading: Boolean) {
         loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        if (isLoading) {
+            emptyView.visibility = View.GONE
+            retryButton.visibility = View.GONE
+            recyclerView.visibility = View.GONE
+        }
     }
 
     override fun showMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    override fun showEvents(items: List<EventResponse>) {
-        emptyView.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
-        adapter.submitItems(items)
+    override fun showEvents(items: List<AttendeeEventResponse>) {
+        allEvents = items
+        retryButton.visibility = View.GONE
+        renderFilteredEvents()
     }
 
     override fun showError(message: String) {
+        recyclerView.visibility = View.GONE
         emptyView.visibility = View.VISIBLE
-        emptyView.text = message
+        emptyView.text = when (selectedFilter) {
+            EventFilter.ALL -> "No events available yet."
+            EventFilter.UPCOMING -> "No upcoming events yet."
+            EventFilter.PAST -> "No past events yet."
+        }
+        retryButton.visibility = View.VISIBLE
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
+
+    private fun selectFilter(filter: EventFilter) {
+        selectedFilter = filter
+        updateTabs()
+        renderFilteredEvents()
+    }
+
+    private fun updateTabs() {
+        allTab.setBackgroundResource(if (selectedFilter == EventFilter.ALL) R.drawable.bg_segment_selected else 0)
+        upcomingTab.setBackgroundResource(if (selectedFilter == EventFilter.UPCOMING) R.drawable.bg_segment_selected else 0)
+        pastTab.setBackgroundResource(if (selectedFilter == EventFilter.PAST) R.drawable.bg_segment_selected else 0)
+    }
+
+    private fun renderFilteredEvents() {
+        val filtered = when (selectedFilter) {
+            EventFilter.ALL -> sortAll(allEvents)
+            EventFilter.UPCOMING -> allEvents.filter { isUpcomingOrOngoingEvent(it) }.sortedWith(compareBy(nullsLast()) { it.eventStartAt })
+            EventFilter.PAST -> allEvents.filter { isPastEvent(it) }.sortedWith(compareByDescending<AttendeeEventResponse> { it.eventStartAt ?: it.eventEndAt ?: Instant.EPOCH })
+        }
+        adapter.submitItems(filtered)
+        recyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        emptyView.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        emptyView.text = when (selectedFilter) {
+            EventFilter.ALL -> "No events available yet."
+            EventFilter.UPCOMING -> "No upcoming events yet."
+            EventFilter.PAST -> "No past events yet."
+        }
+    }
+
+    private fun sortAll(items: List<AttendeeEventResponse>): List<AttendeeEventResponse> {
+        val upcoming = items.filter { isUpcomingOrOngoingEvent(it) }.sortedWith(compareBy(nullsLast()) { it.eventStartAt })
+        val scheduled = items.filter { !isUpcomingOrOngoingEvent(it) && !isPastEvent(it) }.sortedWith(compareBy(nullsLast()) { it.eventStartAt })
+        val past = items.filter { isPastEvent(it) }.sortedWith(compareByDescending<AttendeeEventResponse> { it.eventStartAt ?: it.eventEndAt ?: Instant.EPOCH })
+        return upcoming + scheduled + past
+    }
+
+    private fun isPastEvent(item: AttendeeEventResponse): Boolean {
+        val now = Instant.now()
+        return item.eventEndAt?.isBefore(now) == true
+    }
+
+    private fun isUpcomingOrOngoingEvent(item: AttendeeEventResponse): Boolean {
+        val now = Instant.now()
+        return item.eventStartAt?.isAfter(now) == true ||
+            (item.eventStartAt != null && item.eventEndAt != null &&
+                !item.eventStartAt.isAfter(now) && !item.eventEndAt.isBefore(now))
+    }
+
+    private fun computedStatusLabel(item: AttendeeEventResponse): String {
+        val now = Instant.now()
+        return when {
+            item.eventEndAt?.isBefore(now) == true -> "Completed"
+            item.eventStartAt?.isAfter(now) == true -> "Upcoming"
+            item.eventStartAt != null && item.eventEndAt != null &&
+                !item.eventStartAt.isAfter(now) && !item.eventEndAt.isBefore(now) -> "Ongoing"
+            else -> "Scheduled"
+        }
+    }
+}
+
+private enum class EventFilter {
+    ALL,
+    UPCOMING,
+    PAST,
 }
 
 class EventDetailPresenter(

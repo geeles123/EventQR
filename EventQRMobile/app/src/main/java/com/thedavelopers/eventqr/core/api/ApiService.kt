@@ -4,6 +4,7 @@ import com.thedavelopers.eventqr.core.api.dto.ApiResponse
 import com.thedavelopers.eventqr.features.auth.model.dto.LoginRequest
 import com.thedavelopers.eventqr.features.auth.model.dto.LoginResponse
 import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardSummary
+import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
 import com.thedavelopers.eventqr.features.events.model.dto.EventApprovalRequest
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequest
 import com.thedavelopers.eventqr.features.events.model.dto.EventResponse
@@ -67,6 +68,9 @@ interface ApiService {
 
     @GET("events")
     suspend fun getEvents(): ApiResponse<List<EventResponse>>
+
+    @GET("events/attendee-visible")
+    suspend fun getAttendeeVisibleEvents(): ApiResponse<List<AttendeeEventResponse>>
 
     @POST("registrations")
     suspend fun createRegistration(@Body request: RegistrationRequest): ApiResponse<RegistrationResponse>

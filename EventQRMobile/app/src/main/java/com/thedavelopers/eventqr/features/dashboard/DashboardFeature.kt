@@ -1,19 +1,25 @@
 package com.thedavelopers.eventqr.features.dashboard
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.core.api.NetworkResult
 import com.thedavelopers.eventqr.core.session.SessionManager
+import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.features.attendee.AttendeeBottomNavItem
 import com.thedavelopers.eventqr.features.attendee.configureAttendeeBottomNav
 import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardSummary
+import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardUpcomingEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -111,6 +117,9 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     private lateinit var reportsCard: Button
     private lateinit var logoutCard: Button
     private lateinit var notificationBell: ImageView
+    private lateinit var upcomingEventsLayout: LinearLayout
+    private lateinit var recentActivityLayout: LinearLayout
+    private lateinit var upcomingEventsViewAll: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,8 +146,14 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
         reportsCard = findViewById(R.id.btnReportsHub)
         logoutCard = findViewById(R.id.btnLogout)
         notificationBell = findViewById(R.id.btnDashboardNotifications)
+        upcomingEventsLayout = findViewById(R.id.layoutUpcomingEvents)
+        recentActivityLayout = findViewById(R.id.layoutRecentActivity)
+        upcomingEventsViewAll = findViewById(R.id.txtUpcomingEventsViewAll)
         notificationBell.setOnClickListener {
             startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeNotificationsActivity::class.java))
+        }
+        upcomingEventsViewAll.setOnClickListener {
+            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.RegisteredEventsActivity::class.java))
         }
 
         configureActions(sessionManager.getUserRole())
@@ -152,18 +167,29 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     }
 
     override fun showLoading(isLoading: Boolean) {
+        loadingText.text = "Loading dashboard..."
         loadingText.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
     override fun showSummary(summary: DashboardSummary) {
+        loadingText.visibility = View.GONE
+        roleText.text = summary.fullName?.takeIf { it.isNotBlank() }
+            ?: sessionManager.getFullName()?.takeIf { it.isNotBlank() }
+            ?: "Attendee"
         summaryEvents.text = summary.totalEvents.toString()
         summaryRegistrations.text = summary.totalRegistrations.toString()
         summaryTransactions.text = summary.totalTransactions.toString()
         summaryRewards.text = summary.totalRewards.toString()
         summaryNotifications.text = summary.totalNotifications.toString()
+        renderUpcomingEvents(summary.upcomingEvents.orEmpty())
+        renderRecentActivity(emptyList()) // Currently no recent activity in DTO
     }
 
     override fun showError(message: String) {
+        loadingText.text = message
+        loadingText.visibility = View.VISIBLE
+        renderUpcomingEvents(emptyList())
+        renderRecentActivity(emptyList())
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
@@ -177,7 +203,133 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
 
     override fun updateHeader(role: String?, name: String?) {
         welcomeText.text = "Welcome back!"
-        roleText.text = name?.takeIf { it.isNotBlank() } ?: "Dharell Dave"
+        roleText.text = name?.takeIf { it.isNotBlank() } ?: "Attendee"
+    }
+
+    private fun renderUpcomingEvents(events: List<DashboardUpcomingEvent>?) {
+        while (upcomingEventsLayout.childCount > 1) {
+            upcomingEventsLayout.removeViewAt(1)
+        }
+        if (events.isNullOrEmpty()) {
+            upcomingEventsLayout.addView(createUpcomingEmptyState())
+            return
+        }
+        events.forEachIndexed { index, event ->
+            upcomingEventsLayout.addView(createUpcomingEventRow(event, index == 0))
+        }
+    }
+
+    private fun createUpcomingEventRow(event: DashboardUpcomingEvent, isFirst: Boolean): View {
+        val row = LinearLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(78),
+            ).apply {
+                topMargin = if (isFirst) dp(23) else dp(10)
+            }
+            setBackgroundResource(R.drawable.bg_soft_gray_pill)
+            gravity = Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(11), 0, dp(11), 0)
+        }
+
+        row.addView(TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(78), dp(56))
+            setBackgroundResource(R.drawable.bg_white_pill_button)
+            gravity = Gravity.CENTER
+            text = "▣"
+            setTextColor(0xFF111111.toInt())
+            textSize = 22f
+        })
+
+        val textColumn = LinearLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = dp(15)
+            }
+            orientation = LinearLayout.VERTICAL
+        }
+        textColumn.addView(TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+            text = event.title.ifBlank { "Untitled event" }
+            setTextColor(0xFF000000.toInt())
+            textSize = 14f
+            typeface = Typeface.DEFAULT_BOLD
+        })
+        textColumn.addView(TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(8)
+            }
+            text = DateFormatters.formatInstant(event.eventStartAt)
+            setTextColor(0xFF6B7280.toInt())
+            textSize = 11f
+        })
+        textColumn.addView(TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(8)
+            }
+            text = event.status?.takeIf { it.isNotBlank() } ?: "Registered"
+            setTextColor(0xFF000000.toInt())
+            textSize = 11f
+            typeface = Typeface.DEFAULT_BOLD
+        })
+        row.addView(textColumn)
+        return row
+    }
+
+    private fun createUpcomingEmptyState(): View {
+        return TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(23)
+            }
+            gravity = Gravity.CENTER
+            text = "No upcoming registered events yet."
+            setTextColor(0xFF6B7280.toInt())
+            textSize = 13f
+            setPadding(dp(12), dp(20), dp(12), dp(20))
+        }
+    }
+
+    private fun renderRecentActivity(activities: List<Any>?) {
+        while (recentActivityLayout.childCount > 1) {
+            recentActivityLayout.removeViewAt(1)
+        }
+        if (activities.isNullOrEmpty()) {
+            recentActivityLayout.addView(createRecentActivityEmptyState())
+            return
+        }
+        // TODO: Render actual activities when available
+    }
+
+    private fun createRecentActivityEmptyState(): View {
+        return TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(23)
+            }
+            gravity = Gravity.CENTER
+            text = "No recent activity yet."
+            setTextColor(0xFF6B7280.toInt())
+            textSize = 13f
+            setPadding(dp(12), dp(20), dp(12), dp(20))
+        }
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 
     private fun configureActions(role: String?) {
