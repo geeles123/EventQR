@@ -13,6 +13,7 @@ import com.thedavelopers.eventqr.features.users.model.entity.UserProfile;
 import com.thedavelopers.eventqr.features.users.repository.UserProfileRepository;
 import com.thedavelopers.eventqr.shared.constants.AccountRole;
 import com.thedavelopers.eventqr.shared.constants.AccountStatus;
+import com.thedavelopers.eventqr.shared.exception.BadRequestException;
 import com.thedavelopers.eventqr.shared.exception.ConflictException;
 import com.thedavelopers.eventqr.shared.exception.ResourceNotFoundException;
 import com.thedavelopers.eventqr.shared.port.AttendeeDirectoryPort;
@@ -48,6 +49,43 @@ public class UserService implements AttendeeDirectoryPort {
 
     public List<UserResponse> findAllUsers() {
         return userProfileRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    public UserResponse findOne(UUID userId) {
+        return toResponse(requireUser(userId));
+    }
+
+    public UserResponse updateProfile(UUID userId, String fullName, String phoneNumber) {
+        UserProfile userProfile = requireUser(userId);
+        if (fullName != null && !fullName.isBlank()) {
+            userProfile.setFullName(fullName.trim());
+        }
+        userProfile.setPhoneNumber(phoneNumber);
+        return toResponse(userProfileRepository.save(userProfile));
+    }
+
+    public UserResponse updateStatus(UUID userId, AccountStatus status) {
+        UserProfile userProfile = requireUser(userId);
+        userProfile.setStatus(status);
+        return toResponse(userProfileRepository.save(userProfile));
+    }
+
+    public UserResponse changePassword(UUID userId, String currentPassword, String newPassword) {
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new BadRequestException("New password is required");
+        }
+        UserProfile userProfile = requireUser(userId);
+        if (!passwordEncoder.matches(currentPassword, userProfile.getPasswordHash())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+        userProfile.setPasswordHash(passwordEncoder.encode(newPassword));
+        return toResponse(userProfileRepository.save(userProfile));
+    }
+
+    public void softDelete(UUID userId) {
+        UserProfile userProfile = requireUser(userId);
+        userProfile.setStatus(AccountStatus.SUSPENDED);
+        userProfileRepository.save(userProfile);
     }
 
     public UserResponse changeRoleResponse(UUID userId, AccountRole role) {
@@ -103,6 +141,11 @@ public class UserService implements AttendeeDirectoryPort {
     private UserResponse toResponse(UserProfile userProfile) {
         return new UserResponse(userProfile.getId(), userProfile.getEmail(), userProfile.getFullName(),
                 userProfile.getPhoneNumber(), userProfile.getRole(), userProfile.getStatus());
+    }
+
+    private UserProfile requireUser(UUID userId) {
+        return userProfileRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     }
 
     private boolean hasRealPassword(UserProfile userProfile) {

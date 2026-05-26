@@ -49,21 +49,50 @@ public class JwtService {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new UnauthorizedException("Missing session token");
         }
+        Claims claims = extractClaims(authorizationHeader);
+        String userId = claims.get("userId", String.class);
+        if (userId == null || userId.isBlank()) {
+            userId = claims.getSubject();
+        }
+        return UUID.fromString(userId);
+    }
+
+    public AccountRole extractRoleFromBearer(String authorizationHeader) {
+        Claims claims = extractClaims(authorizationHeader);
+        String role = claims.get("role", String.class);
+        if (role == null || role.isBlank()) {
+            throw new UnauthorizedException("Invalid or expired session");
+        }
+        try {
+            return AccountRole.valueOf(role);
+        } catch (IllegalArgumentException exception) {
+            throw new UnauthorizedException("Invalid or expired session");
+        }
+    }
+
+    public String extractEmailFromBearer(String authorizationHeader) {
+        Claims claims = extractClaims(authorizationHeader);
+        String email = claims.get("email", String.class);
+        if (email == null || email.isBlank()) {
+            throw new UnauthorizedException("Invalid or expired session");
+        }
+        return email;
+    }
+
+    private Claims extractClaims(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Missing session token");
+        }
         String token = authorizationHeader.substring("Bearer ".length()).trim();
         if (token.isBlank()) {
             throw new UnauthorizedException("Missing session token");
         }
         try {
-            Claims claims = Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            String userId = claims.get("userId", String.class);
-            if (userId == null || userId.isBlank()) {
-                userId = claims.getSubject();
-            }
-            return UUID.fromString(userId);
         } catch (JwtException | IllegalArgumentException exception) {
             throw new UnauthorizedException("Invalid or expired session");
         }

@@ -3,8 +3,11 @@ package com.thedavelopers.eventqr.features.users.controller;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,19 +17,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.thedavelopers.eventqr.features.users.model.dto.UserRequest;
+import com.thedavelopers.eventqr.features.users.model.dto.ProfileUpdateRequest;
 import com.thedavelopers.eventqr.features.users.model.dto.UserResponse;
 import com.thedavelopers.eventqr.features.users.service.UserService;
 import com.thedavelopers.eventqr.shared.constants.AccountRole;
 import com.thedavelopers.eventqr.shared.response.ApiResponse;
+import com.thedavelopers.eventqr.shared.security.JwtService;
 
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
+    private final JwtService jwtService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtService jwtService) {
         this.userService = userService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping
@@ -37,6 +44,24 @@ public class UserController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> list() {
         return ResponseEntity.ok(ApiResponse.success(userService.findAllUsers()));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> me(HttpServletRequest request) {
+        UUID userId = jwtService.extractUserIdFromBearer(request.getHeader("Authorization"));
+        return ResponseEntity.ok(ApiResponse.success(userService.findOne(userId)));
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMe(HttpServletRequest request,
+                                                              @Valid @RequestBody ProfileUpdateRequest body) {
+        UUID userId = jwtService.extractUserIdFromBearer(request.getHeader("Authorization"));
+        return ResponseEntity.ok(ApiResponse.success("Profile updated", userService.updateProfile(userId, body.fullName(), body.phoneNumber())));
+    }
+
+    @PostMapping("/me/avatar")
+    public ResponseEntity<ApiResponse<Void>> updateAvatar() {
+        return ResponseEntity.status(501).body(new ApiResponse<>(false, "Avatar upload is not wired yet", null, java.time.Instant.now()));
     }
 
     @PutMapping("/{userId}/role/{role}")
