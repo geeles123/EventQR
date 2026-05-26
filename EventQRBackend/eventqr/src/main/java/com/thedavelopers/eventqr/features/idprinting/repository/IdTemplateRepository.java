@@ -9,5 +9,7 @@ import com.thedavelopers.eventqr.features.idprinting.model.entity.IdTemplate;
 
 public interface IdTemplateRepository extends JpaRepository<IdTemplate, UUID> {
 
+    java.util.List<IdTemplate> findByEventId(UUID eventId);
+
     Optional<IdTemplate> findFirstByEventIdAndActiveTrue(UUID eventId);
 }

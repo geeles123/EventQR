@@ -84,9 +84,54 @@ public class RegistrationService implements RegistrationLookupPort, Registration
         return registrationRepository.findByEventId(eventId).stream().map(this::toResponse).toList();
     }
 
+    public List<RegistrationResponse> findByAttendeeUserId(UUID attendeeUserId) {
+        return registrationRepository.findByAttendeeUserId(attendeeUserId).stream().map(this::toResponse).toList();
+    }
+
     public RegistrationResponse findOne(UUID registrationId) {
         return toResponse(registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationId)));
+    }
+
+    public RegistrationResponse findOneForAttendee(UUID registrationId, UUID attendeeUserId) {
+        EventRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationId));
+        if (!registration.getAttendeeUserId().equals(attendeeUserId)) {
+            throw new ForbiddenException("You can only view your own registration");
+        }
+        return toResponse(registration);
+    }
+
+    public RegistrationResponse cancel(UUID registrationId, UUID attendeeUserId) {
+        EventRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationId));
+        if (!registration.getAttendeeUserId().equals(attendeeUserId)) {
+            throw new ForbiddenException("You can only cancel your own registration");
+        }
+        registration.setStatus(RegistrationStatus.CANCELLED);
+        registrationRepository.save(registration);
+        if (registration.getQrCredentialId() != null) {
+            qrCredentialPort.findById(registration.getQrCredentialId()).ifPresent(qr -> qrCredentialPort.markEmailQueued(qr.qrCredentialId()));
+        }
+        return toResponse(registration);
+    }
+
+    public QrCredentialSnapshot getOrCreateQrCredential(UUID registrationId) {
+        EventRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found: " + registrationId));
+        if (registration.getQrCredentialId() != null) {
+            return qrCredentialPort.findById(registration.getQrCredentialId())
+                    .orElseThrow(() -> new ResourceNotFoundException("QR credential not found for registration: " + registrationId));
+        }
+        QrCredentialSnapshot qrCredential = qrCredentialPort.issueCredential(registration.getEventId(), registration.getAttendeeUserId(),
+                registration.getId(), registration.getAttendeeEmail());
+        registration.setQrCredentialId(qrCredential.qrCredentialId());
+        registrationRepository.save(registration);
+        return qrCredential;
+    }
+
+    public QrCredentialSnapshot linkQrCredential(UUID registrationId) {
+        return getOrCreateQrCredential(registrationId);
     }
 
     @Override

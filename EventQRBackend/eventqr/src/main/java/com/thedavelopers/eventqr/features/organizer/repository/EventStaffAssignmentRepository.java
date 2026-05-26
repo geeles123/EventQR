@@ -12,6 +12,8 @@ public interface EventStaffAssignmentRepository extends JpaRepository<EventStaff
 
     List<EventStaffAssignment> findByEventId(UUID eventId);
 
+    List<EventStaffAssignment> findByStaffUserId(UUID staffUserId);
+
     Optional<EventStaffAssignment> findByEventIdAndStaffUserId(UUID eventId, UUID staffUserId);
 
     boolean existsByEventIdAndStaffUserId(UUID eventId, UUID staffUserId);

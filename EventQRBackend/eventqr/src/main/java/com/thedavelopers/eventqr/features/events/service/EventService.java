@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse;
+import com.thedavelopers.eventqr.features.events.model.dto.EventAvailabilityResponse;
 import com.thedavelopers.eventqr.features.events.model.dto.EventApprovalRequest;
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequest;
 import com.thedavelopers.eventqr.features.events.model.dto.EventResponse;
@@ -71,6 +72,46 @@ public class EventService implements EventLookupPort {
     public List<EventResponse> findAllEvents() {
         return eventRepository.findAll().stream().map(this::toResponse).toList();
     }
+
+        public EventResponse findOne(UUID eventId) {
+        return toResponse(eventRepository.findById(eventId)
+            .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId)));
+        }
+
+        public EventAvailabilityResponse availability(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
+        boolean registrationOpen = event.getStatus() == EventStatus.APPROVED || event.getStatus() == EventStatus.ACTIVE;
+        boolean full = (event.getCapacity() != null && event.getCapacity() > 0)
+            && (event.getCurrentAttendeeCount() != null && event.getCurrentAttendeeCount() >= event.getCapacity());
+        boolean available = registrationOpen && !full;
+        return new EventAvailabilityResponse(event.getId(), event.getCapacity() == null ? 0 : event.getCapacity(),
+            event.getCurrentAttendeeCount() == null ? 0 : event.getCurrentAttendeeCount(), registrationOpen, full,
+            available, available ? "Event can accept registrations" : "Event is closed or at capacity");
+        }
+
+        public EventResponse update(UUID eventId, EventRequest request) {
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
+        event.setTitle(request.title().trim());
+        event.setDescription(request.description());
+        event.setLocation(request.location());
+        event.setRegistrationOpenAt(request.registrationOpenAt());
+        event.setRegistrationCloseAt(request.registrationCloseAt());
+        event.setEventStartAt(request.eventStartAt());
+        event.setEventEndAt(request.eventEndAt());
+        event.setCapacity(request.capacity());
+        event.setRewardsEnabled(Boolean.TRUE.equals(request.rewardsEnabled()));
+        event.setOrganizerUserId(request.organizerUserId());
+        return toResponse(eventRepository.save(event));
+        }
+
+        public EventResponse updateStatus(UUID eventId, EventStatus status) {
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
+        event.setStatus(status);
+        return toResponse(eventRepository.save(event));
+        }
 
     public List<AttendeeEventResponse> findAttendeeVisibleEvents() {
         return jdbcTemplate.query("""

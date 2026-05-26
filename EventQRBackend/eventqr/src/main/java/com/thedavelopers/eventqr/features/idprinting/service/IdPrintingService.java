@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.thedavelopers.eventqr.features.idprinting.model.dto.IdPrintRequest;
 import com.thedavelopers.eventqr.features.idprinting.model.dto.IdPrintResponse;
+import com.thedavelopers.eventqr.features.idprinting.model.dto.IdTemplateRequest;
 import com.thedavelopers.eventqr.features.idprinting.model.entity.IdPrintLog;
 import com.thedavelopers.eventqr.features.idprinting.model.entity.IdTemplate;
 import com.thedavelopers.eventqr.features.idprinting.repository.IdPrintLogRepository;
@@ -66,5 +67,39 @@ public class IdPrintingService {
         return idPrintLogRepository.findByEventId(eventId).stream().map(log -> new IdPrintResponse(log.getId(), log.getEventId(),
                 log.getAttendeeUserId(), log.getRegistrationId(), log.getQrCredentialId(), log.getTemplateId(), log.isReprint(),
                 log.isSuccess(), log.getMessage(), log.getPrintedAt())).toList();
+    }
+
+    public List<IdTemplate> listTemplates(UUID eventId) {
+        return idTemplateRepository.findByEventId(eventId);
+    }
+
+    public IdTemplate getTemplate(UUID eventId) {
+        return idTemplateRepository.findFirstByEventIdAndActiveTrue(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active ID template not found for event"));
+    }
+
+    public IdTemplate saveTemplate(UUID eventId, IdTemplateRequest request) {
+        IdTemplate template = idTemplateRepository.findFirstByEventIdAndActiveTrue(eventId).orElseGet(IdTemplate::new);
+        template.setEventId(eventId);
+        template.setName(request.name());
+        template.setTemplateJson(request.templateJson());
+        template.setActive(request.active());
+        return idTemplateRepository.save(template);
+    }
+
+    public IdPrintResponse previewForAttendee(UUID eventId, UUID attendeeUserId) {
+        var registration = registrationLookupPort.listByEventId(eventId).stream()
+                .filter(item -> item.attendeeUserId().equals(attendeeUserId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found for attendee"));
+        return print(new IdPrintRequest(eventId, registration.qrCredentialId(), attendeeUserId, false));
+    }
+
+    public IdPrintResponse printForAttendee(UUID eventId, UUID attendeeUserId, boolean reprint) {
+        var registration = registrationLookupPort.listByEventId(eventId).stream()
+                .filter(item -> item.attendeeUserId().equals(attendeeUserId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found for attendee"));
+        return print(new IdPrintRequest(eventId, registration.qrCredentialId(), attendeeUserId, reprint));
     }
 }

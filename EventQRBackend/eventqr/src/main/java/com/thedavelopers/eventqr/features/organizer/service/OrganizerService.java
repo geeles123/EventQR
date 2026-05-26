@@ -12,7 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.thedavelopers.eventqr.features.events.model.entity.Event;
 import com.thedavelopers.eventqr.features.events.repository.EventRepository;
+import com.thedavelopers.eventqr.features.events.model.dto.EventRequest;
+import com.thedavelopers.eventqr.features.events.model.dto.EventResponse;
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerDtos.*;
+import com.thedavelopers.eventqr.features.organizer.model.dto.RewardSettingsRequest;
+import com.thedavelopers.eventqr.features.organizer.model.dto.TransactionRuleRequest;
 import com.thedavelopers.eventqr.features.organizer.model.entity.EventStaffAssignment;
 import com.thedavelopers.eventqr.features.organizer.repository.EventStaffAssignmentRepository;
 import com.thedavelopers.eventqr.features.registrations.model.entity.EventRegistration;
@@ -25,6 +29,7 @@ import com.thedavelopers.eventqr.features.transactions.model.entity.TransactionL
 import com.thedavelopers.eventqr.features.transactions.model.entity.TransactionRule;
 import com.thedavelopers.eventqr.features.transactions.repository.TransactionLogRepository;
 import com.thedavelopers.eventqr.features.transactions.repository.TransactionRuleRepository;
+import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse;
 import com.thedavelopers.eventqr.features.users.model.entity.UserProfile;
 import com.thedavelopers.eventqr.features.users.repository.UserProfileRepository;
 import com.thedavelopers.eventqr.shared.constants.AccountRole;
@@ -85,6 +90,47 @@ public class OrganizerService {
     }
 
     @Transactional(readOnly = true)
+    public OrganizerEventResponse event(UUID organizerUserId, UUID eventId) {
+        return toOrganizerEvent(requireOrganizerEvent(organizerUserId, eventId));
+    }
+
+    public EventResponse updateEvent(UUID organizerUserId, UUID eventId, EventRequest request) {
+        Event event = requireOrganizerEvent(organizerUserId, eventId);
+        event.setTitle(request.title().trim());
+        event.setDescription(request.description());
+        event.setLocation(request.location());
+        event.setRegistrationOpenAt(request.registrationOpenAt());
+        event.setRegistrationCloseAt(request.registrationCloseAt());
+        event.setEventStartAt(request.eventStartAt());
+        event.setEventEndAt(request.eventEndAt());
+        event.setCapacity(request.capacity());
+        event.setRewardsEnabled(Boolean.TRUE.equals(request.rewardsEnabled()));
+        event.setOrganizerUserId(request.organizerUserId());
+        return new EventResponse(eventRepository.save(event).getId(), event.getTitle(), event.getDescription(), event.getLocation(),
+                event.getRegistrationOpenAt(), event.getRegistrationCloseAt(), event.getEventStartAt(), event.getEventEndAt(),
+                event.getCapacity(), event.getCurrentAttendeeCount(), event.getStatus(), event.isRewardsEnabled(),
+                event.getOrganizerUserId(), event.getApprovedByUserId(), event.getApprovedAt(), event.getRejectionReason());
+    }
+
+    public EventResponse updateStatus(UUID organizerUserId, UUID eventId, EventStatus status) {
+        Event event = requireOrganizerEvent(organizerUserId, eventId);
+        event.setStatus(status);
+        return new EventResponse(eventRepository.save(event).getId(), event.getTitle(), event.getDescription(), event.getLocation(),
+                event.getRegistrationOpenAt(), event.getRegistrationCloseAt(), event.getEventStartAt(), event.getEventEndAt(),
+                event.getCapacity(), event.getCurrentAttendeeCount(), event.getStatus(), event.isRewardsEnabled(),
+                event.getOrganizerUserId(), event.getApprovedByUserId(), event.getApprovedAt(), event.getRejectionReason());
+    }
+
+    public EventResponse updateRewardSettings(UUID organizerUserId, UUID eventId, RewardSettingsRequest request) {
+        Event event = requireOrganizerEvent(organizerUserId, eventId);
+        event.setRewardsEnabled(request.enabled());
+        return new EventResponse(eventRepository.save(event).getId(), event.getTitle(), event.getDescription(), event.getLocation(),
+                event.getRegistrationOpenAt(), event.getRegistrationCloseAt(), event.getEventStartAt(), event.getEventEndAt(),
+                event.getCapacity(), event.getCurrentAttendeeCount(), event.getStatus(), event.isRewardsEnabled(),
+                event.getOrganizerUserId(), event.getApprovedByUserId(), event.getApprovedAt(), event.getRejectionReason());
+    }
+
+    @Transactional(readOnly = true)
     public OrganizerDashboardResponse dashboard(UUID organizerUserId, UUID eventId) {
         return new OrganizerDashboardResponse(toOrganizerEvent(requireOrganizerEvent(organizerUserId, eventId)));
     }
@@ -96,6 +142,31 @@ public class OrganizerService {
         return registrationRepository.findByEventId(eventId).stream()
                 .map(registration -> toAttendee(registration, logs))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizerAttendeeResponse> searchAttendees(UUID organizerUserId, UUID eventId, String query) {
+        String safeQuery = query == null ? "" : query.trim().toLowerCase();
+        if (safeQuery.isBlank()) {
+            return attendees(organizerUserId, eventId);
+        }
+        return attendees(organizerUserId, eventId).stream()
+                .filter(attendee -> attendee.name().toLowerCase().contains(safeQuery)
+                        || attendee.email().toLowerCase().contains(safeQuery)
+                        || attendee.registrationStatus().toLowerCase().contains(safeQuery)
+                        || attendee.currentEventStatus().toLowerCase().contains(safeQuery))
+                .toList();
+    }
+
+    public OrganizerAttendeeResponse updateAttendeeStatus(UUID organizerUserId, UUID eventId, UUID attendeeId, String status) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        EventRegistration registration = registrationRepository.findByEventId(eventId).stream()
+                .filter(item -> item.getAttendeeUserId().equals(attendeeId) || item.getId().equals(attendeeId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Attendee not found for event"));
+        registration.setStatus(com.thedavelopers.eventqr.shared.constants.RegistrationStatus.valueOf(status));
+        registrationRepository.save(registration);
+        return toAttendee(registration, transactionLogRepository.findByEventId(eventId));
     }
 
     @Transactional(readOnly = true)
@@ -116,6 +187,18 @@ public class OrganizerService {
         return transactionLogRepository.findByEventId(eventId).stream()
                 .map(log -> toTransaction(event, log, registrations, purposes, staffAssignments))
                 .toList();
+    }
+
+    public TransactionResponse transaction(UUID organizerUserId, UUID eventId, UUID transactionId) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        TransactionLog log = transactionLogRepository.findById(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
+        if (!log.getEventId().equals(eventId)) {
+            throw new ResourceNotFoundException("Transaction not found for event");
+        }
+        return new TransactionResponse(log.getId(), log.getEventId(), log.getAttendeeUserId(), log.getRegistrationId(),
+                log.getQrCredentialId(), log.getScanPurposeId(), log.getTransactionType(), log.getTransactionResult(),
+                log.getPointsDelta(), log.getReason(), log.getScannedAt());
     }
 
     @Transactional(readOnly = true)
@@ -259,6 +342,73 @@ public class OrganizerService {
         rule.setPointsAwarded(request.pointsEnabled() ? request.pointsValue() : 0);
         transactionRuleRepository.save(rule);
         return toScanPurpose(purpose);
+    }
+
+    public void deleteScanPurpose(UUID organizerUserId, UUID eventId, UUID purposeId) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        ScanPurpose purpose = scanPurposeRepository.findById(purposeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Scan purpose not found"));
+        if (!purpose.getEventId().equals(eventId)) {
+            throw new ResourceNotFoundException("Scan purpose not found for event");
+        }
+        scanPurposeRepository.delete(purpose);
+    }
+
+    public OrganizerScanPurposeResponse enableScanPurpose(UUID organizerUserId, UUID eventId, UUID purposeId, boolean enabled) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        ScanPurpose purpose = scanPurposeRepository.findById(purposeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Scan purpose not found"));
+        if (!purpose.getEventId().equals(eventId)) {
+            throw new ResourceNotFoundException("Scan purpose not found for event");
+        }
+        purpose.setActive(enabled);
+        scanPurposeRepository.save(purpose);
+        TransactionRule rule = transactionRuleRepository.findByEventIdAndScanPurposeId(eventId, purposeId).orElseGet(TransactionRule::new);
+        rule.setEventId(eventId);
+        rule.setScanPurposeId(purposeId);
+        rule.setActive(enabled);
+        if (!enabled) {
+            rule.setAllowDuplicate(false);
+        }
+        transactionRuleRepository.save(rule);
+        return toScanPurpose(purpose);
+    }
+
+    public OrganizerScanPurposeResponse toggleTrackingOnly(UUID organizerUserId, UUID eventId, UUID purposeId, boolean trackingOnly) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        ScanPurpose purpose = scanPurposeRepository.findById(purposeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Scan purpose not found"));
+        if (!purpose.getEventId().equals(eventId)) {
+            throw new ResourceNotFoundException("Scan purpose not found for event");
+        }
+        purpose.setTrackingOnly(trackingOnly);
+        scanPurposeRepository.save(purpose);
+        TransactionRule rule = transactionRuleRepository.findByEventIdAndScanPurposeId(eventId, purposeId).orElseGet(TransactionRule::new);
+        rule.setEventId(eventId);
+        rule.setScanPurposeId(purposeId);
+        if (trackingOnly) {
+            rule.setPointsAwarded(0);
+        }
+        transactionRuleRepository.save(rule);
+        return toScanPurpose(purpose);
+    }
+
+    public List<TransactionRule> listTransactionRules(UUID organizerUserId, UUID eventId) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        return transactionRuleRepository.findByEventId(eventId);
+    }
+
+    public TransactionRule saveTransactionRule(UUID organizerUserId, UUID eventId, TransactionRuleRequest request) {
+        requireOrganizerEvent(organizerUserId, eventId);
+        TransactionRule rule = transactionRuleRepository.findByEventIdAndScanPurposeId(eventId, request.scanPurposeId())
+                .orElseGet(TransactionRule::new);
+        rule.setEventId(eventId);
+        rule.setScanPurposeId(request.scanPurposeId());
+        rule.setActive(request.active());
+        rule.setAllowDuplicate(request.allowDuplicate());
+        rule.setRequiresStaffAssignment(request.requiresStaffAssignment());
+        rule.setPointsAwarded(request.pointsAwarded());
+        return transactionRuleRepository.save(rule);
     }
 
     private Event requireOrganizerEvent(UUID organizerUserId, UUID eventId) {

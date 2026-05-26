@@ -9,11 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionRequest;
+import com.thedavelopers.eventqr.features.transactions.model.dto.ScanVerificationResponse;
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse;
 import com.thedavelopers.eventqr.features.transactions.model.entity.TransactionLog;
 import com.thedavelopers.eventqr.features.transactions.model.entity.TransactionRule;
 import com.thedavelopers.eventqr.features.transactions.repository.TransactionLogRepository;
 import com.thedavelopers.eventqr.features.transactions.repository.TransactionRuleRepository;
+import com.thedavelopers.eventqr.features.organizer.repository.EventStaffAssignmentRepository;
 import com.thedavelopers.eventqr.shared.constants.AccountRole;
 import com.thedavelopers.eventqr.shared.constants.EventStatus;
 import com.thedavelopers.eventqr.shared.constants.RegistrationStatus;
@@ -42,6 +44,7 @@ public class TransactionService {
     private final RegistrationLookupPort registrationLookupPort;
     private final RegistrationCommandPort registrationCommandPort;
     private final AttendeeDirectoryPort attendeeDirectoryPort;
+    private final EventStaffAssignmentRepository eventStaffAssignmentRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public TransactionService(TransactionLogRepository transactionLogRepository,
@@ -52,6 +55,7 @@ public class TransactionService {
                               RegistrationLookupPort registrationLookupPort,
                               RegistrationCommandPort registrationCommandPort,
                               AttendeeDirectoryPort attendeeDirectoryPort,
+                              EventStaffAssignmentRepository eventStaffAssignmentRepository,
                               ApplicationEventPublisher applicationEventPublisher) {
         this.transactionLogRepository = transactionLogRepository;
         this.transactionRuleRepository = transactionRuleRepository;
@@ -61,7 +65,29 @@ public class TransactionService {
         this.registrationLookupPort = registrationLookupPort;
         this.registrationCommandPort = registrationCommandPort;
         this.attendeeDirectoryPort = attendeeDirectoryPort;
+        this.eventStaffAssignmentRepository = eventStaffAssignmentRepository;
         this.applicationEventPublisher = applicationEventPublisher;
+    }
+
+    @Transactional(readOnly = true)
+    public ScanVerificationResponse verify(TransactionRequest request) {
+        var eventSnapshot = eventLookupPort.requireEvent(request.eventId());
+        var purpose = scanPurposePort.requireActive(request.scanPurposeId());
+        if (!eventSnapshot.eventId().equals(purpose.eventId())) {
+            throw new ForbiddenException("Scan purpose does not belong to the event");
+        }
+        validateStaff(request.eventId(), request.staffUserId());
+        var qrSnapshot = qrCredentialPort.findByQrValue(request.qrValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid QR credential"));
+        if (!eventSnapshot.eventId().equals(qrSnapshot.eventId())) {
+            throw new ForbiddenException("Wrong event QR");
+        }
+        var registration = registrationLookupPort.findByQrCredentialId(qrSnapshot.qrCredentialId())
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found for QR credential"));
+        return new ScanVerificationResponse(eventSnapshot.eventId(), registration.attendeeUserId(), registration.registrationId(),
+                qrSnapshot.qrCredentialId(), qrSnapshot.qrValue(), registration.attendeeName(), registration.attendeeEmail(),
+                registration.status(), purpose.scanPurposeId(), purpose.code(), qrSnapshot.active(),
+                "QR credential verified", Instant.now());
     }
 
     public TransactionResponse record(TransactionRequest request) {
@@ -71,7 +97,7 @@ public class TransactionService {
         }
 
         var purpose = scanPurposePort.requireActive(request.scanPurposeId());
-        validateStaff(request.staffUserId());
+        validateStaff(request.eventId(), request.staffUserId());
 
         var qrSnapshot = qrCredentialPort.findByQrValue(request.qrValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid QR credential"));
@@ -114,11 +140,48 @@ public class TransactionService {
         return toResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public TransactionResponse latest(UUID eventId) {
+        TransactionLog log = transactionLogRepository.findFirstByEventIdOrderByScannedAtDesc(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("No transactions found for event"));
+        return toResponse(log);
+    }
+
     public List<TransactionResponse> findByEvent(UUID eventId) {
         return transactionLogRepository.findByEventId(eventId).stream().map(this::toResponse).toList();
     }
 
-    private void validateStaff(UUID staffUserId) {
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> findByAttendee(UUID attendeeUserId) {
+        return transactionLogRepository.findByAttendeeUserId(attendeeUserId).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> findByEventAndAttendee(UUID eventId, UUID attendeeUserId) {
+        return transactionLogRepository.findByEventId(eventId).stream()
+                .filter(log -> log.getAttendeeUserId().equals(attendeeUserId))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TransactionResponse findOne(UUID transactionId) {
+        TransactionLog log = transactionLogRepository.findById(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
+        return toResponse(log);
+    }
+
+    @Transactional(readOnly = true)
+    public TransactionResponse findOneForEvent(UUID eventId, UUID transactionId) {
+        TransactionLog log = transactionLogRepository.findById(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
+        if (!log.getEventId().equals(eventId)) {
+            throw new ResourceNotFoundException("Transaction not found for event");
+        }
+        return toResponse(log);
+    }
+
+    private void validateStaff(UUID eventId, UUID staffUserId) {
         if (staffUserId == null) {
             throw new ForbiddenException("Staff user is required for scan transactions");
         }
@@ -127,6 +190,9 @@ public class TransactionService {
         if (staff.status() != com.thedavelopers.eventqr.shared.constants.AccountStatus.ACTIVE
                 || (staff.role() != AccountRole.STAFF && staff.role() != AccountRole.ORGANIZER && staff.role() != AccountRole.ADMIN)) {
             throw new ForbiddenException("Staff user is not authorized for this scan");
+        }
+        if (staff.role() == AccountRole.STAFF && !eventStaffAssignmentRepository.existsByEventIdAndStaffUserId(eventId, staffUserId)) {
+            throw new ForbiddenException("Staff user is not assigned to this event");
         }
     }
 

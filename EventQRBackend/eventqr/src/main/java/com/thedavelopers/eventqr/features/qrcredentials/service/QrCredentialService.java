@@ -43,6 +43,12 @@ public class QrCredentialService implements QrCredentialPort {
         return qrCredentialRepository.save(qrCredential).toSnapshot();
     }
 
+    public QrCredentialSnapshot issueOrReturnExisting(UUID eventId, UUID attendeeUserId, UUID registrationId, String attendeeEmail) {
+        return qrCredentialRepository.findByRegistrationId(registrationId)
+                .map(QrCredential::toSnapshot)
+                .orElseGet(() -> issueCredential(eventId, attendeeUserId, registrationId, attendeeEmail));
+    }
+
     @Override
     public Optional<QrCredentialSnapshot> findById(UUID qrCredentialId) {
         return qrCredentialRepository.findById(qrCredentialId).map(QrCredential::toSnapshot);
@@ -72,6 +78,12 @@ public class QrCredentialService implements QrCredentialPort {
     public QrCredentialSnapshot markDownloaded(UUID qrCredentialId) {
         QrCredential qrCredential = load(qrCredentialId);
         qrCredential.setDownloaded(true);
+        return qrCredentialRepository.save(qrCredential).toSnapshot();
+    }
+
+    public QrCredentialSnapshot deactivate(UUID qrCredentialId) {
+        QrCredential qrCredential = load(qrCredentialId);
+        qrCredential.setActive(false);
         return qrCredentialRepository.save(qrCredential).toSnapshot();
     }
 
