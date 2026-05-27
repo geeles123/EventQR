@@ -150,8 +150,20 @@ interface ApiService {
         @Body request: OrganizerScanPurposeRequestDto,
     ): ApiResponse<OrganizerScanPurposeDto>
 
-    @POST("registrations")
-    suspend fun createRegistration(@Body request: RegistrationRequest): ApiResponse<RegistrationResponse>
+    @GET("registrations/me")
+    suspend fun getMyRegistrations(): ApiResponse<List<RegistrationResponse>>
+
+    @POST("events/{eventId}/registrations")
+    suspend fun createRegistration(
+        @Path("eventId") eventId: String,
+        @Body request: RegistrationRequest
+    ): ApiResponse<RegistrationResponse>
+
+    @POST("registrations/{registrationId}/qr")
+    suspend fun createQrCredential(@Path("registrationId") registrationId: String): ApiResponse<QrCredentialSnapshot>
+
+    @POST("registrations/{registrationId}/qr/link")
+    suspend fun linkQrCredential(@Path("registrationId") registrationId: String): ApiResponse<QrCredentialSnapshot>
 
     @GET("registrations/{registrationId}")
     suspend fun getRegistration(@Path("registrationId") registrationId: String): ApiResponse<RegistrationResponse>
@@ -215,6 +227,76 @@ interface ApiService {
 
     @GET("reports/event/{eventId}")
     suspend fun getEventReport(@Path("eventId") eventId: String): ApiResponse<EventReportSnapshot>
+
+    // Staff QR Scanning Endpoints
+    @GET("staff/events")
+    suspend fun getStaffEvents(): ApiResponse<List<EventResponse>>
+
+    @GET("staff/events/{eventId}")
+    suspend fun getStaffEventById(@Path("eventId") eventId: String): ApiResponse<EventResponse>
+
+    @GET("staff/events/{eventId}/scan-purposes")
+    suspend fun getStaffScanPurposes(@Path("eventId") eventId: String): ApiResponse<List<ScanPurposeResponse>>
+
+    @POST("staff/events/{eventId}/scan/verify")
+    suspend fun verifyScan(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/entry")
+    suspend fun logEntry(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/attendance")
+    suspend fun logAttendance(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/benefit-claim")
+    suspend fun logBenefitClaim(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/booth-visit")
+    suspend fun logBoothVisit(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/reward-redemption")
+    suspend fun logRewardRedemption(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/exit")
+    suspend fun logExit(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @POST("staff/events/{eventId}/scan/reject")
+    suspend fun logReject(
+        @Path("eventId") eventId: String,
+        @Body request: TransactionRequest
+    ): ApiResponse<TransactionResponse>
+
+    @GET("staff/events/{eventId}/scan/latest")
+    suspend fun getLatestScan(@Path("eventId") eventId: String): ApiResponse<TransactionResponse>
+
+    @GET("staff/events/{eventId}/attendees/{attendeeId}")
+    suspend fun getStaffAttendee(
+        @Path("eventId") eventId: String,
+        @Path("attendeeId") attendeeId: String
+    ): ApiResponse<RegistrationResponse>
+
+    @GET("staff/events/{eventId}/transactions")
+    suspend fun getStaffTransactions(@Path("eventId") eventId: String): ApiResponse<List<TransactionResponse>>
 
     @POST("notifications")
     suspend fun createNotification(@Body request: NotificationRequest): ApiResponse<NotificationResponse>

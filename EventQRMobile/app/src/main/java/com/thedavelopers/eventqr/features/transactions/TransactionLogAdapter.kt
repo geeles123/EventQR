@@ -43,6 +43,7 @@ class TransactionLogAdapter : RecyclerView.Adapter<TransactionLogAdapter.ViewHol
         private val footerIconView: ImageView = itemView.findViewById(R.id.imgFooterIcon)
         private val footerMessageView: TextView = itemView.findViewById(R.id.txtFooterMessage)
         private val userAvatarView: ImageView = itemView.findViewById(R.id.imgUserAvatar)
+        private val purposeIconView: ImageView = itemView.findViewById(R.id.imgPurposeIcon)
 
         fun bind(item: TransactionResponse) {
             userNameView.text = "Attendee: ${item.attendeeUserId.toString().take(8)}"
@@ -57,9 +58,13 @@ class TransactionLogAdapter : RecyclerView.Adapter<TransactionLogAdapter.ViewHol
             
             timeView.text = DateFormatters.formatInstant(item.scannedAt).replace(" ", "\n")
             
-            purposeNameView.text = item.transactionType.name.lowercase().capitalize().replace("_", " ")
+            purposeNameView.text = item.transactionType.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")
             
-            footerMessageView.text = if (isSuccess) "Scan processed successfully" else (item.reason ?: "Scan rejected by system")
+            // Set purpose styling
+            purposeIconView.setImageResource(if (item.transactionType.name.contains("CHECK_IN")) R.drawable.ic_qr_scan else R.drawable.ic_file)
+            purposeIconView.imageTintList = ColorStateList.valueOf(Color.parseColor("#0369A1"))
+            
+            footerMessageView.text = if (isSuccess) "${purposeNameView.text} logged" else (item.reason ?: "Scan rejected by system")
             footerMessageView.setTextColor(if (isSuccess) Color.parseColor("#059669") else Color.parseColor("#DC2626"))
             footerIconView.imageTintList = ColorStateList.valueOf(if (isSuccess) Color.parseColor("#059669") else Color.parseColor("#DC2626"))
             

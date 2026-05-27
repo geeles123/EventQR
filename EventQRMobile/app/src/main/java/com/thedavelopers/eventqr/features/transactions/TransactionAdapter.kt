@@ -22,6 +22,8 @@ class TransactionAdapter(private val eventTitle: String? = null) : RecyclerView.
         notifyDataSetChanged()
     }
 
+    fun getItems(): List<TransactionResponse> = items
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_transaction, parent, false)
         return ViewHolder(view)

@@ -21,7 +21,10 @@ class AttendeeRepository(context: Context) {
     private val apiService = ApiClient.getService(context)
     suspend fun getEvents() = safeApiCall { apiService.getAttendeeVisibleEvents() }
     suspend fun getEvent(eventId: String) = safeApiCall { apiService.getEventById(eventId) }
-    suspend fun createRegistration(request: RegistrationRequest) = safeApiCall { apiService.createRegistration(request) }
+    suspend fun createRegistration(eventId: String, request: RegistrationRequest) = safeApiCall { apiService.createRegistration(eventId, request) }
+    suspend fun getMyRegistrations() = safeApiCall { apiService.getMyRegistrations() }
+    suspend fun createQrCredential(registrationId: String) = safeApiCall { apiService.createQrCredential(registrationId) }
+    suspend fun linkQrCredential(registrationId: String) = safeApiCall { apiService.linkQrCredential(registrationId) }
     suspend fun getRegistration(registrationId: String) = safeApiCall { apiService.getRegistration(registrationId) }
     suspend fun getRegistrationsByEvent(eventId: String) = safeApiCall { apiService.getRegistrationsByEvent(eventId) }
     suspend fun getQrCredentialByRegistration(registrationId: String) = safeApiCall { apiService.getQrCredentialByRegistration(registrationId) }

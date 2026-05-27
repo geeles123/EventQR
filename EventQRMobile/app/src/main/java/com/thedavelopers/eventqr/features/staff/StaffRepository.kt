@@ -3,6 +3,7 @@ package com.thedavelopers.eventqr.features.staff
 import android.content.Context
 import com.thedavelopers.eventqr.core.api.ApiClient
 import com.thedavelopers.eventqr.core.api.NetworkResult
+import com.thedavelopers.eventqr.core.api.dto.ScanPurposeCode
 import com.thedavelopers.eventqr.core.api.safeApiCall
 import com.thedavelopers.eventqr.features.idprinting.model.dto.IdPrintRequest
 import com.thedavelopers.eventqr.features.notifications.model.dto.NotificationResponse
@@ -15,13 +16,24 @@ import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResp
 class StaffRepository(context: Context) {
     private val apiService = ApiClient.getService(context)
 
-    suspend fun getEvents() = safeApiCall { apiService.getEvents() }
+    suspend fun getEvents() = safeApiCall { apiService.getStaffEvents() }
 
-    suspend fun getScanPurposesByEvent(eventId: String) = safeApiCall { apiService.getScanPurposesByEvent(eventId) }
+    suspend fun getScanPurposesByEvent(eventId: String) = safeApiCall { apiService.getStaffScanPurposes(eventId) }
 
-    suspend fun createTransaction(request: TransactionRequest) = safeApiCall { apiService.createTransaction(request) }
+    suspend fun createTransaction(request: TransactionRequest, purposeCode: ScanPurposeCode) = safeApiCall {
+        when (purposeCode) {
+            ScanPurposeCode.ENTRY -> apiService.logEntry(request.eventId.toString(), request)
+            ScanPurposeCode.REGISTRATION_LOOKUP -> apiService.verifyScan(request.eventId.toString(), request)
+            ScanPurposeCode.ATTENDANCE -> apiService.logAttendance(request.eventId.toString(), request)
+            ScanPurposeCode.BENEFIT_CLAIM -> apiService.logBenefitClaim(request.eventId.toString(), request)
+            ScanPurposeCode.BOOTH_VISIT, ScanPurposeCode.SESSION_VISIT -> apiService.logBoothVisit(request.eventId.toString(), request)
+            ScanPurposeCode.REWARD_REDEMPTION_SCAN -> apiService.logRewardRedemption(request.eventId.toString(), request)
+            ScanPurposeCode.EXIT -> apiService.logExit(request.eventId.toString(), request)
+            else -> apiService.createTransaction(request)
+        }
+    }
 
-    suspend fun getTransactionsByEvent(eventId: String) = safeApiCall { apiService.getTransactionsByEvent(eventId) }
+    suspend fun getTransactionsByEvent(eventId: String) = safeApiCall { apiService.getStaffTransactions(eventId) }
 
     suspend fun printId(request: IdPrintRequest) = safeApiCall { apiService.printId(request) }
 
