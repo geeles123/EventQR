@@ -104,8 +104,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_soft_input_no_stroke"
-                        android:paddingStart="8dp" />
+                        android:background="@drawable/bg_spinner_with_arrow"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="40dp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -119,13 +120,18 @@
                 app:cardUseCompatPadding="true">
 
                 <LinearLayout
+                    android:id="@+id/layoutScannerPlaceholder"
                     android:layout_width="match_parent"
                     android:layout_height="320dp"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="20dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
 
                     <ImageView
+                        android:id="@+id/imgScannerIcon"
                         android:layout_width="100dp"
                         android:layout_height="100dp"
                         android:src="@drawable/ic_camera"
@@ -162,6 +168,14 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="12dp" />
+
+            <ProgressBar
+                android:id="@+id/progressScanner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
 
             <!-- Scanning Tips Card -->
             <androidx.cardview.widget.CardView
@@ -212,10 +226,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="76dp"
-        android:background="#FFFFFF"
-        android:elevation="8dp"
+        android:background="@drawable/bg_bottom_nav"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="38dp">
 
         <LinearLayout
             android:id="@+id/navDashboard"
@@ -226,19 +240,21 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="39dp"
+                android:layout_height="39dp"
+                android:background="@drawable/bg_nav_icon_inactive"
                 android:contentDescription="Dashboard"
+                android:padding="8dp"
                 android:src="@drawable/ic_nav_home"
-                app:tint="#6B7280" />
+                app:tint="#000000" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="7dp"
                 android:text="Dashboard"
-                android:textColor="#6B7280"
-                android:textSize="12sp" />
+                android:textColor="#333333"
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -250,21 +266,21 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="39dp"
+                android:layout_height="39dp"
                 android:background="@drawable/bg_nav_icon_active"
                 android:contentDescription="Scan QR"
-                android:padding="10dp"
-                android:src="@drawable/ic_camera"
+                android:padding="9dp"
+                android:src="@drawable/ic_qr_scan"
                 app:tint="#FFFFFF" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="7dp"
                 android:text="Scan QR"
-                android:textColor="#111827"
-                android:textSize="12sp"
+                android:textColor="#333333"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -277,19 +293,21 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="39dp"
+                android:layout_height="39dp"
+                android:background="@drawable/bg_nav_icon_inactive"
                 android:contentDescription="Logs"
+                android:padding="8dp"
                 android:src="@drawable/ic_file"
-                app:tint="#6B7280" />
+                app:tint="#000000" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="7dp"
                 android:text="Logs"
-                android:textColor="#6B7280"
-                android:textSize="12sp" />
+                android:textColor="#333333"
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -301,19 +319,21 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="39dp"
+                android:layout_height="39dp"
+                android:background="@drawable/bg_nav_icon_inactive"
                 android:contentDescription="Profile"
+                android:padding="8dp"
                 android:src="@drawable/ic_nav_profile"
-                app:tint="#6B7280" />
+                app:tint="#000000" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="7dp"
                 android:text="Profile"
-                android:textColor="#6B7280"
-                android:textSize="12sp" />
+                android:textColor="#333333"
+                android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

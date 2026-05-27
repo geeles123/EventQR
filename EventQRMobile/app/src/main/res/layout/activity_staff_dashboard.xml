@@ -218,112 +218,12 @@
                             android:textStyle="bold" />
                     </RelativeLayout>
 
-                    <!-- Event Item 1 -->
-                    <LinearLayout
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerAssignedEvents"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_staff_event_item"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="12dp"
-                        android:layout_marginBottom="12dp">
-
-                        <FrameLayout
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/bg_info_card"
-                            android:backgroundTint="#E5E7EB">
-                            <ImageView
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:padding="12dp"
-                                android:src="@drawable/ic_nav_calendar"
-                                app:tint="@color/eventqr_muted" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Tech Conference 2024"
-                                android:textColor="@color/eventqr_text"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="May 25, 2024 • 9:00 AM"
-                                android:textColor="@color/eventqr_muted"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="›"
-                            android:textColor="@color/eventqr_muted"
-                            android:textSize="24sp" />
-                    </LinearLayout>
-
-                    <!-- Event Item 2 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_staff_event_item"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="12dp">
-
-                        <FrameLayout
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/bg_info_card"
-                            android:backgroundTint="#E5E7EB">
-                            <ImageView
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:padding="12dp"
-                                android:src="@drawable/ic_nav_calendar"
-                                app:tint="@color/eventqr_muted" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Darell Event 2026"
-                                android:textColor="@color/eventqr_text"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="May 25, 2024 • 9:00 AM"
-                                android:textColor="@color/eventqr_muted"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="›"
-                            android:textColor="@color/eventqr_muted"
-                            android:textSize="24sp" />
-                    </LinearLayout>
+                        android:nestedScrollingEnabled="false"
+                        tools:listitem="@layout/item_staff_event" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -349,6 +249,14 @@
                         android:layout_height="wrap_content"
                         android:nestedScrollingEnabled="false" />
                 </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressScanner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone" />
             </LinearLayout>
         </ScrollView>
     </FrameLayout>

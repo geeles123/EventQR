@@ -19,6 +19,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.core.api.NetworkResult
 import com.thedavelopers.eventqr.core.session.SessionManager
+import com.thedavelopers.eventqr.core.util.BitmapSaver
 import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.core.util.Validators
 import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
@@ -470,22 +471,43 @@ class RegistrationPresenter(
         view?.showFieldError("fullName", null)
         view?.showLoading(true)
         job = kotlinx.coroutines.MainScope().launch {
-            when (val result = repository.createRegistration(
+            val regResult = repository.createRegistration(
+                eventId,
                 RegistrationRequest(
                     eventId = UUID.fromString(eventId),
                     email = email,
                     fullName = fullName,
                     phoneNumber = phoneNumber.ifBlank { null },
                 )
-            )) {
+            )
+            
+            when (regResult) {
                 is NetworkResult.Success -> {
-                    view?.showLoading(false)
-                    view?.showMessage(result.message ?: "Registration completed")
-                    view?.openQr(result.data.registrationId.toString())
+                    val registrationId = regResult.data.registrationId.toString()
+                    // Create QR Credential immediately after successful registration
+                    val qrResult = repository.createQrCredential(registrationId)
+                    
+                    if (qrResult is NetworkResult.Success) {
+                        // Optional linking if backend didn't do it automatically
+                        repository.linkQrCredential(registrationId)
+                        
+                        view?.showLoading(false)
+                        view?.showMessage("Registration and QR creation successful")
+                        view?.openQr(registrationId)
+                    } else {
+                        // Registration worked but QR failed - still show success but warn about QR
+                        view?.showLoading(false)
+                        view?.showMessage("Registered successfully, but QR generation failed. Please try again later.")
+                        // Navigate to registered events instead
+                        (view as? AppCompatActivity)?.let {
+                            it.startActivity(Intent(it, RegisteredEventsActivity::class.java))
+                            it.finish()
+                        }
+                    }
                 }
                 is NetworkResult.Error -> {
                     view?.showLoading(false)
-                    view?.showMessage(result.message)
+                    view?.showMessage(regResult.message)
                 }
                 NetworkResult.Loading -> Unit
             }
@@ -593,7 +615,9 @@ class QrCredentialPresenter(
     fun load(registrationId: String) {
         view?.showLoading(true)
         job = kotlinx.coroutines.MainScope().launch {
+            // Ensure QR exists/is linked before rendering
             val qrResult = repository.getQrCredentialByRegistration(registrationId)
+            
             if (qrResult is NetworkResult.Success) {
                 val regResult = repository.getRegistration(registrationId)
                 var eventTitle: String? = null
@@ -611,9 +635,15 @@ class QrCredentialPresenter(
                     eventTitle
                 )
                 qrResult.data.qrCredentialId.toString().also { repository.markQrDisplayed(it) }
-            } else if (qrResult is NetworkResult.Error) {
-                view?.showLoading(false)
-                view?.showMessage(qrResult.message)
+            } else {
+                // If get failed, try creating it again (one-time fallback)
+                val createResult = repository.createQrCredential(registrationId)
+                if (createResult is NetworkResult.Success) {
+                    load(registrationId) // Recursive call to retry render after creation
+                } else if (createResult is NetworkResult.Error) {
+                    view?.showLoading(false)
+                    view?.showMessage("Unable to load QR: ${createResult.message}")
+                }
             }
         }
     }
@@ -640,6 +670,9 @@ open class AttendeeQrCredentialActivity : AppCompatActivity(), QrCredentialContr
     private lateinit var credentialIdText: TextView
     private lateinit var eventNameText: TextView
     private var currentQrCredentialId: String? = null
+    private var currentQrBitmap: Bitmap? = null
+    private var currentEventTitle: String? = null
+    private var currentRegistrationId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -668,8 +701,20 @@ open class AttendeeQrCredentialActivity : AppCompatActivity(), QrCredentialContr
         }
 
         markDownloadedButton.setOnClickListener {
-            currentQrCredentialId?.let { presenter.markDownloaded(it) }
-            Toast.makeText(this, "QR download marked", Toast.LENGTH_SHORT).show()
+            val bitmap = currentQrBitmap
+            if (bitmap != null) {
+                val fileName = "EventQR_${currentEventTitle?.replace(" ", "_") ?: "Event"}_${currentRegistrationId ?: "ID"}"
+                val uri = BitmapSaver.saveBitmapToGallery(this, bitmap, fileName)
+                
+                if (uri != null) {
+                    currentQrCredentialId?.let { presenter.markDownloaded(it) }
+                    Toast.makeText(this, "QR saved to gallery", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "Failed to save QR image", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "QR image not ready", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -688,8 +733,13 @@ open class AttendeeQrCredentialActivity : AppCompatActivity(), QrCredentialContr
 
     override fun renderQr(snapshot: QrCredentialSnapshot, registration: RegistrationResponse?, eventTitle: String?) {
         currentQrCredentialId = snapshot.qrCredentialId.toString()
+        currentRegistrationId = snapshot.registrationId.toString()
+        currentEventTitle = eventTitle
+        
         qrText.text = snapshot.qrValue
-        qrImage.setImageBitmap(renderQrBitmap(snapshot.qrValue))
+        val bitmap = renderQrBitmap(snapshot.qrValue)
+        currentQrBitmap = bitmap
+        qrImage.setImageBitmap(bitmap)
         
         credentialIdText.text = "QR-${snapshot.eventId.toString().take(4).uppercase()}-${snapshot.qrCredentialId.toString().take(8).uppercase()}"
         attendeeNameText.text = registration?.attendeeName ?: "Attendee"

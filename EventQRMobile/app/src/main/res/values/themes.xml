@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.EventQR" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.EventQR" parent="Theme.MaterialComponents.Light.NoActionBar.Bridge">
         <item name="android:windowAnimationStyle">@style/NoAnimation</item>
+        <item name="colorPrimary">@color/eventqr_indigo</item>
+        <item name="colorSecondary">@color/eventqr_purple</item>
     </style>
 
     <style name="NoAnimation">
