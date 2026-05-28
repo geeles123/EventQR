@@ -27,6 +27,7 @@ public record EventRequestResponse(
         String additionalNotes,
         String reasonForRequest,
         EventRequestStatus status,
+        UUID eventId,
         String adminRemarks,
         UUID reviewedByUserId,
         Instant reviewedAt,

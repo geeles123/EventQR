@@ -80,6 +80,9 @@ public class EventCreationRequest extends BaseEntity {
     @Column(nullable = false)
     private EventRequestStatus status = EventRequestStatus.PENDING;
 
+    @Column(name = "event_id")
+    private UUID eventId;
+
     @Column(length = 2000)
     private String adminRemarks;
 

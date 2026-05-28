@@ -23,7 +23,7 @@ public interface EventLookupPort {
             Instant now = Instant.now();
             boolean windowOpen = (registrationOpenAt == null || !now.isBefore(registrationOpenAt))
                     && (registrationCloseAt == null || !now.isAfter(registrationCloseAt));
-            return (status == EventStatus.APPROVED || status == EventStatus.ACTIVE) && windowOpen;
+            return status == EventStatus.ACTIVE && windowOpen;
         }
 
         public boolean isFull() {

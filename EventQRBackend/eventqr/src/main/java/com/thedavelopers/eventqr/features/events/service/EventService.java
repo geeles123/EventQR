@@ -17,13 +17,12 @@ import com.thedavelopers.eventqr.shared.constants.EventStatus;
 import com.thedavelopers.eventqr.shared.exception.ConflictException;
 import com.thedavelopers.eventqr.shared.exception.ResourceNotFoundException;
 import com.thedavelopers.eventqr.shared.port.EventLookupPort;
-import com.thedavelopers.eventqr.shared.port.EventLookupPort.EventSnapshot;
 
 @Service
 @Transactional
 public class EventService implements EventLookupPort {
 
-    private static final List<EventStatus> PUBLIC_EVENT_STATUSES = List.of(EventStatus.APPROVED, EventStatus.ACTIVE);
+    private static final List<EventStatus> PUBLIC_EVENT_STATUSES = List.of(EventStatus.ACTIVE);
 
     private final EventRepository eventRepository;
 
@@ -78,20 +77,21 @@ public class EventService implements EventLookupPort {
         }
 
         public EventAvailabilityResponse availability(UUID eventId) {
-        Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
-        boolean registrationOpen = event.getStatus() == EventStatus.APPROVED || event.getStatus() == EventStatus.ACTIVE;
-        boolean full = (event.getCapacity() != null && event.getCapacity() > 0)
-            && (event.getCurrentAttendeeCount() != null && event.getCurrentAttendeeCount() >= event.getCapacity());
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
+            int capacity = safeCount(event.getCapacity());
+            int attendeeCount = safeCount(event.getCurrentAttendeeCount());
+            boolean registrationOpen = event.getStatus() == EventStatus.ACTIVE;
+            boolean full = capacity > 0 && attendeeCount >= capacity;
         boolean available = registrationOpen && !full;
-        return new EventAvailabilityResponse(event.getId(), event.getCapacity() == null ? 0 : event.getCapacity(),
-            event.getCurrentAttendeeCount() == null ? 0 : event.getCurrentAttendeeCount(), registrationOpen, full,
-            available, available ? "Event can accept registrations" : "Event is closed or at capacity");
+            return new EventAvailabilityResponse(event.getId(), capacity,
+                    attendeeCount, registrationOpen, full,
+                    available, available ? "Event can accept registrations" : "Event is closed or at capacity");
         }
 
         public EventResponse update(UUID eventId, EventRequest request) {
-        Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
         event.setTitle(request.title().trim());
         event.setDescription(request.description());
         event.setLocation(request.location());
@@ -116,40 +116,46 @@ public class EventService implements EventLookupPort {
         return eventRepository.findByStatusInOrderByEventStartAtAsc(PUBLIC_EVENT_STATUSES).stream()
             .map(event -> new AttendeeEventResponse(event.getId(), event.getTitle(), event.getDescription(), event.getLocation(),
                 event.getRegistrationOpenAt(), event.getRegistrationCloseAt(), event.getEventStartAt(), event.getEventEndAt(),
-                event.getCapacity() == null ? 0 : event.getCapacity(),
-                event.getCurrentAttendeeCount() == null ? 0 : event.getCurrentAttendeeCount()))
+                safeCount(event.getCapacity()),
+                safeCount(event.getCurrentAttendeeCount())))
             .toList();
     }
 
     @Override
-    public EventSnapshot requireEvent(UUID eventId) {
+    public EventLookupPort.EventSnapshot requireEvent(UUID eventId) {
         return eventRepository.findById(eventId).map(Event::toSnapshot)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
     }
 
     @Override
-    public java.util.Optional<EventSnapshot> findById(UUID eventId) {
+    public java.util.Optional<EventLookupPort.EventSnapshot> findById(UUID eventId) {
         return eventRepository.findById(eventId).map(Event::toSnapshot);
     }
 
     @Override
-    public List<EventSnapshot> listAll() {
+    public List<EventLookupPort.EventSnapshot> listAll() {
         return eventRepository.findAll().stream().map(Event::toSnapshot).toList();
     }
 
     public void incrementCurrentAttendeeCount(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
-        event.setCurrentAttendeeCount((event.getCurrentAttendeeCount() == null ? 0 : event.getCurrentAttendeeCount()) + 1);
+        event.setCurrentAttendeeCount(safeCount(event.getCurrentAttendeeCount()) + 1);
         eventRepository.save(event);
     }
 
     private EventResponse toResponse(Event event) {
+        int capacity = safeCount(event.getCapacity());
+        int attendeeCount = safeCount(event.getCurrentAttendeeCount());
         return new EventResponse(event.getId(), event.getTitle(), event.getDescription(), event.getLocation(),
                 event.getRegistrationOpenAt(), event.getRegistrationCloseAt(), event.getEventStartAt(),
-                event.getEventEndAt(), event.getCapacity() == null ? 0 : event.getCapacity(),
-                event.getCurrentAttendeeCount() == null ? 0 : event.getCurrentAttendeeCount(), event.getStatus(),
+                event.getEventEndAt(), capacity,
+                attendeeCount, event.getStatus(),
                 event.isRewardsEnabled(), event.getOrganizerUserId(), event.getApprovedByUserId(), event.getApprovedAt(),
                 event.getRejectionReason());
+    }
+
+    private int safeCount(Integer value) {
+        return value == null ? 0 : value;
     }
 }
