@@ -81,11 +81,13 @@ data class OrganizerTransactionDto(
     val eventTitle: String? = null,
     val attendeeId: UUID? = null,
     val attendeeName: String? = null,
+    val attendeeEmail: String? = null,
     val registrationId: UUID? = null,
     val qrCredentialId: UUID? = null,
     val scanPurposeId: UUID? = null,
     val staffId: UUID? = null,
     val staffName: String? = null,
+    val staffEmail: String? = null,
     val qrId: String? = null,
     val scanPurpose: String? = null,
     val transactionType: TransactionType,
@@ -117,6 +119,34 @@ data class OrganizerReportDto(
     val rejectedSummary: List<OrganizerReportRowDto> = emptyList(),
     val pointsRewardsSummary: List<OrganizerReportRowDto> = emptyList(),
     val recentActivity: List<OrganizerReportRowDto> = emptyList(),
+)
+
+data class OrganizerOverallReportDto(
+    val organizerUserId: UUID,
+    val organizerName: String? = null,
+    val totalEvents: Int = 0,
+    val totalRegistered: Int = 0,
+    val enteredCount: Int = 0,
+    val exitedCount: Int = 0,
+    val attendanceCount: Int = 0,
+    val approvedTransactionCount: Int = 0,
+    val rejectedTransactionCount: Int = 0,
+    val pointsDistributed: Int = 0,
+    val benefitClaims: Int = 0,
+    val boothSessionVisits: Int = 0,
+    val rewardRedemptions: Int = 0,
+    val eventBreakdown: List<OrganizerOverallEventReportDto> = emptyList(),
+)
+
+data class OrganizerOverallEventReportDto(
+    val eventId: UUID,
+    val eventTitle: String,
+    val registered: Int = 0,
+    val entered: Int = 0,
+    val exited: Int = 0,
+    val approvedScans: Int = 0,
+    val rejectedScans: Int = 0,
+    val points: Int = 0,
 )
 
 data class OrganizerReportRowDto(

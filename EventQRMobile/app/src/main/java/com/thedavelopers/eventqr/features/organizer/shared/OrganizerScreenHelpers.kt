@@ -461,13 +461,7 @@ internal fun AppCompatActivity.bottomNav(selected: String): LinearLayout {
             }
         }),
         Triple(NAV_REPORTS, com.thedavelopers.eventqr.R.drawable.ic_search, {
-            if (selected != NAV_REPORTS) {
-                openOrganizerPlaceholder(
-                    title = "Reports",
-                    message = "Reports and analytics will be available in a follow-up release.",
-                    selectedNav = NAV_REPORTS,
-                )
-            }
+            if (this@bottomNav !is OrganizerOverallReportsActivity) openOrganizerPage(OrganizerOverallReportsActivity::class.java)
         }),
     )
     items.forEach { (label, iconRes, onClick) ->

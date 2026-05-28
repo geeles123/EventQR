@@ -117,15 +117,14 @@ public class OrganizerController {
         return ResponseEntity.ok(ApiResponse.success(organizerService.transaction(currentUserId(request), eventId, transactionId)));
     }
 
+    @GetMapping("/reports/summary")
+    public ResponseEntity<ApiResponse<OrganizerOverallReportResponse>> overallReports(HttpServletRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(organizerService.overallReport(currentUserId(request))));
+    }
+
     @GetMapping("/events/{eventId}/reports")
     public ResponseEntity<ApiResponse<OrganizerReportResponse>> reports(HttpServletRequest request,
                                                                         @PathVariable UUID eventId) {
-        return ResponseEntity.ok(ApiResponse.success(organizerService.report(currentUserId(request), eventId)));
-    }
-
-    @GetMapping("/events/{eventId}/reports/summary")
-    public ResponseEntity<ApiResponse<OrganizerReportResponse>> reportSummary(HttpServletRequest request,
-                                                                              @PathVariable UUID eventId) {
         return ResponseEntity.ok(ApiResponse.success(organizerService.report(currentUserId(request), eventId)));
     }
 

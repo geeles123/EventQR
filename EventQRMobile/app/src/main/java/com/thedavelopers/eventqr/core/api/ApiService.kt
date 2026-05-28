@@ -24,6 +24,7 @@ import com.thedavelopers.eventqr.features.notifications.model.dto.NotificationRe
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerAttendeeDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerDashboardDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerEventDto
+import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerOverallReportDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerReportDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerScanPurposeDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerScanPurposeRequestDto
@@ -188,6 +189,9 @@ interface ApiService {
 
     @GET("organizer/events/{eventId}/reports/summary")
     suspend fun getOrganizerReport(@Path("eventId") eventId: String): ApiResponse<OrganizerReportDto>
+
+    @GET("organizer/reports/summary")
+    suspend fun getOrganizerOverallReport(): ApiResponse<OrganizerOverallReportDto>
 
     @GET("organizer/events/{eventId}/staff")
     suspend fun getOrganizerStaff(@Path("eventId") eventId: String): ApiResponse<List<OrganizerStaffDto>>

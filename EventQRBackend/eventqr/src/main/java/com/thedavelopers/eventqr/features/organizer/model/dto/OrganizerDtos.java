@@ -44,8 +44,9 @@ public final class OrganizerDtos {
     }
 
     public record OrganizerTransactionResponse(UUID transactionId, UUID eventId, String eventTitle, UUID attendeeId,
-                                               String attendeeName, UUID registrationId, UUID qrCredentialId,
-                                               UUID scanPurposeId, UUID staffId, String staffName, String qrId,
+                                               String attendeeName, String attendeeEmail, UUID registrationId,
+                                               UUID qrCredentialId, UUID scanPurposeId, UUID staffId,
+                                               String staffName, String staffEmail, String qrId,
                                                String scanPurpose, TransactionType transactionType,
                                                TransactionResult resultStatus, int pointsDelta, String reason,
                                                String message, String deviceSource, String relatedItem,
@@ -59,6 +60,18 @@ public final class OrganizerDtos {
                                           List<ReportRow> transactionSummary,
                                           List<ReportRow> attendanceSummary, List<ReportRow> rejectedSummary,
                                           List<ReportRow> pointsRewardsSummary, List<ReportRow> recentActivity) {
+    }
+
+    public record OrganizerOverallReportResponse(UUID organizerUserId, String organizerName, long totalEvents,
+                                                 long totalRegistered, long enteredCount, long exitedCount,
+                                                 long attendanceCount, long approvedTransactionCount,
+                                                 long rejectedTransactionCount, long pointsDistributed,
+                                                 long benefitClaims, long boothSessionVisits,
+                                                 long rewardRedemptions, List<OrganizerOverallEventReportRow> eventBreakdown) {
+    }
+
+    public record OrganizerOverallEventReportRow(UUID eventId, String eventTitle, long registered, long entered,
+                                                 long exited, long approvedScans, long rejectedScans, long points) {
     }
 
     public record ReportRow(String label, String value) {

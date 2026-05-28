@@ -96,6 +96,11 @@ open class TransactionLogsActivity : AppCompatActivity() {
             matchesFilter && matchesQuery
         }
         list.removeAllViews()
+        if (logs.isEmpty() && logsSource.source == OrganizerMvpDataSource.ERROR) {
+            list.addView(errorState(logsSource.message ?: "Transaction logs could not be loaded.") { loadLogs() })
+            detail.removeAllViews()
+            return
+        }
         if (logs.isEmpty()) {
             list.addView(emptyState("No transaction logs match this view."))
             detail.removeAllViews()
@@ -115,7 +120,9 @@ open class TransactionLogsActivity : AppCompatActivity() {
             addView(top)
             addView(text("${log.type} • ${log.status}", 12, true, if (log.status == "Rejected") ERROR else SUCCESS))
             addView(text(log.eventTitle, 12, false, MUTED))
+            addView(text("Attendee: ${log.attendeeEmail.ifBlank { "No email" }}", 12, false, MUTED))
             addView(text("Staff: ${log.staffName}", 12, false, MUTED))
+            addView(text("Staff email: ${log.staffEmail.ifBlank { "No email" }}", 12, false, MUTED))
             addView(text(log.timestamp, 12, false, MUTED))
             if (log.status == "Rejected") addView(text("Reason: ${log.reason}", 12, true, ERROR))
             setOnClickListener { renderDetail(log) }
@@ -127,7 +134,9 @@ open class TransactionLogsActivity : AppCompatActivity() {
             addView(text("Transaction ID: ${log.id}", 15, true))
             addView(text("Event: ${log.eventTitle} / ${log.eventId}"))
             addView(text("Attendee: ${log.attendeeName} / ${log.attendeeId}"))
+            addView(text("Attendee email: ${log.attendeeEmail.ifBlank { "No email" }}"))
             addView(text("Staff: ${log.staffName} / ${log.staffId}"))
+            addView(text("Staff email: ${log.staffEmail.ifBlank { "No email" }}"))
             addView(text("QR ID: ${log.qrId}"))
             addView(text("Scan purpose: ${log.scanPurpose}"))
             addView(text("Result status: ${log.status}"))

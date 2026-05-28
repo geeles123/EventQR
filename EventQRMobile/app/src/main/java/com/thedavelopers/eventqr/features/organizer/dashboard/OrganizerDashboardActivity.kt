@@ -59,11 +59,9 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
             )
         }
         findViewById<View>(R.id.btnManageReports).setOnClickListener {
-            openOrganizerPlaceholder(
-                title = "Reports",
-                message = "Reports and analytics is currently a placeholder from the dashboard.",
-            )
+            openOrganizerPage(OrganizerOverallReportsActivity::class.java)
         }
+        findViewById<TextView>(R.id.btnManageReports).text = "Overall Reports"
         findViewById<View>(R.id.btnManageRewards).setOnClickListener {
             openOrganizerPlaceholder(
                 title = "Rewards",

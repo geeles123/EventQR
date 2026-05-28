@@ -17,6 +17,7 @@ import com.thedavelopers.eventqr.features.notifications.model.dto.NotificationRe
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerAttendeeDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerDashboardDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerEventDto
+import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerOverallReportDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerReportDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerScanPurposeDto
 import com.thedavelopers.eventqr.features.organizer.model.dto.OrganizerScanPurposeRequestDto
@@ -160,6 +161,14 @@ class OrganizerRepository(private val context: Context) {
             is NetworkResult.Success -> OrganizerMvpLoad(event.fromOrganizerReport(report.data), OrganizerMvpDataSource.BACKEND)
             is NetworkResult.Error -> OrganizerMvpLoad(event, OrganizerMvpDataSource.ERROR, report.message)
             NetworkResult.Loading -> OrganizerMvpLoad(event, OrganizerMvpDataSource.ERROR, null)
+        }
+    }
+
+    suspend fun loadOverallReportForMvp(): OrganizerMvpLoad<OrganizerOverallReportDto?> {
+        return when (val report = fetchOrganizerOverallReport()) {
+            is NetworkResult.Success -> OrganizerMvpLoad(report.data, OrganizerMvpDataSource.BACKEND)
+            is NetworkResult.Error -> OrganizerMvpLoad(null, OrganizerMvpDataSource.ERROR, report.message)
+            NetworkResult.Loading -> OrganizerMvpLoad(null, OrganizerMvpDataSource.ERROR, null)
         }
     }
 
@@ -324,6 +333,7 @@ class OrganizerRepository(private val context: Context) {
     suspend fun fetchOrganizerAttendees(eventId: String) = safeApiCall { apiService.getOrganizerAttendees(eventId) }
     suspend fun fetchOrganizerTransactions(eventId: String) = safeApiCall { apiService.getOrganizerTransactions(eventId) }
     suspend fun fetchOrganizerReport(eventId: String) = safeApiCall { apiService.getOrganizerReport(eventId) }
+    suspend fun fetchOrganizerOverallReport() = safeApiCall { apiService.getOrganizerOverallReport() }
     suspend fun fetchOrganizerStaff(eventId: String) = safeApiCall { apiService.getOrganizerStaff(eventId) }
     suspend fun addOrganizerStaff(eventId: String, request: StaffAssignmentRequestDto) =
         safeApiCall { apiService.addOrganizerStaff(eventId, request) }
@@ -443,13 +453,15 @@ private fun OrganizerTransactionDto.toMvpTransaction(fallbackEventTitle: String)
         eventTitle = eventTitle ?: fallbackEventTitle,
         attendeeId = attendeeId?.toString() ?: registrationId?.toString() ?: "unknown",
         attendeeName = attendeeName ?: "Unknown attendee",
+        attendeeEmail = attendeeEmail.orEmpty(),
         qrId = qrId ?: qrCredentialId?.toString().orEmpty(),
         staffId = staffId?.toString() ?: "Not available",
         staffName = staffName ?: "Staff not available",
+        staffEmail = staffEmail.orEmpty(),
         scanPurpose = scanPurpose ?: displayType,
         type = displayType,
         timestamp = DateFormatters.formatInstant(createdTimestamp),
-            status = if (rejected) "Rejected" else "Approved",
+        status = if (rejected) "Rejected" else "Approved",
         message = message ?: if (rejected) "Scan rejected" else "$displayType recorded",
         reason = reason ?: if (rejected) "Rejected scan" else "Approved scan",
         deviceSource = deviceSource ?: "Not available",
@@ -614,9 +626,11 @@ private fun TransactionResponse.toMvpTransaction(
         eventTitle = eventTitle,
         attendeeId = attendeeUserId.toString(),
         attendeeName = attendeeName ?: "Attendee ${attendeeUserId.toString().take(8)}",
+        attendeeEmail = "",
         qrId = qrCredentialId.toString(),
         staffId = "Not available",
         staffName = "Staff not available",
+        staffEmail = "",
         scanPurpose = purpose?.name ?: displayType,
         type = displayType,
         timestamp = DateFormatters.formatInstant(scannedAt),
