@@ -48,6 +48,7 @@
         <activity android:name=".features.organizer.ManageRewardsActivity" android:exported="false" />
         <activity android:name=".features.organizer.PointRulesPlaceholderActivity" android:exported="false" />
         <activity android:name=".features.organizer.IdTemplatePlaceholderActivity" android:exported="false" />
+        <activity android:name=".features.organizer.EventManagementHubActivity" android:exported="false" />
         <activity android:name=".features.organizer.TransactionRulesActivity" android:exported="false" />
         <activity android:name=".features.organizer.ManageScanPurposesActivity" android:exported="false" />
         <activity android:name=".features.organizer.ManageUsersActivity" android:exported="false" />

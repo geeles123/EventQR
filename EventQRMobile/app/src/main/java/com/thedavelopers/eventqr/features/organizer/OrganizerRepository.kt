@@ -53,16 +53,23 @@ class OrganizerRepository(private val context: Context) {
     private val sessionManager = SessionManager(context)
     private val selectionPrefs = context.getSharedPreferences("organizer_mvp_selection", Context.MODE_PRIVATE)
 
+    private fun List<OrganizerMvpEvent>.manageable(): List<OrganizerMvpEvent> =
+        filter {
+            it.status.equals("Approved", ignoreCase = true) ||
+                it.status.equals("Active", ignoreCase = true) ||
+                it.status.equals("Completed", ignoreCase = true)
+        }
+
     fun getApprovedOrganizerEvents(): List<OrganizerMvpEvent> =
         if (OrganizerMvpPlaceholders.cachedEvents.isNotEmpty()) {
-            OrganizerMvpPlaceholders.cachedEvents.filter { it.status.equals("Approved", ignoreCase = true) }
+            OrganizerMvpPlaceholders.cachedEvents.manageable()
         } else {
             runBlocking {
                 when (val result = fetchOrganizerEvents()) {
                     is NetworkResult.Success -> {
                         val mapped = result.data.map { it.toMvpEvent() }
                         OrganizerMvpPlaceholders.cachedEvents = mapped
-                        mapped.filter { it.status.equals("Approved", ignoreCase = true) }
+                        mapped.manageable()
                     }
                     else -> emptyList()
                 }
@@ -88,10 +95,10 @@ class OrganizerRepository(private val context: Context) {
     }
 
     fun resolveSelectedEvent(events: List<OrganizerMvpEvent>, requestedEventId: String? = null): OrganizerMvpEvent? {
-        val approved = events.filter { it.status.equals("Approved", ignoreCase = true) }
-        val selected = approved.firstOrNull { it.id == requestedEventId } ?:
-            approved.firstOrNull { it.id == getSelectedEventId() } ?:
-            approved.firstOrNull()
+        val manageable = events.manageable()
+        val selected = requestedEventId?.takeIf { it.isNotBlank() }?.let { eventId ->
+            manageable.firstOrNull { it.id == eventId }
+        } ?: manageable.firstOrNull { it.id == getSelectedEventId() } ?: manageable.firstOrNull()
         saveSelectedEventId(selected?.id)
         return selected
     }
@@ -433,7 +440,7 @@ private fun OrganizerTransactionDto.toMvpTransaction(fallbackEventTitle: String)
         scanPurpose = scanPurpose ?: displayType,
         type = displayType,
         timestamp = DateFormatters.formatInstant(createdTimestamp),
-        status = if (rejected) "Rejected" else "Successful",
+            status = if (rejected) "Rejected" else "Approved",
         message = message ?: if (rejected) "Scan rejected" else "$displayType recorded",
         reason = reason ?: if (rejected) "Rejected scan" else "Approved scan",
         deviceSource = deviceSource ?: "Not available",

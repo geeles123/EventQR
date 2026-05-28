@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private const val EXTRA_EVENT_ID = "event_id"
+private const val EXTRA_EVENT_TITLE = "event_title"
 private const val NAV_DASHBOARD = "Dashboard"
 private const val NAV_EVENTS = "Events"
 private const val NAV_ATTENDEES = "Attendees"
@@ -185,6 +186,12 @@ private fun AppCompatActivity.selectedEventId(): String =
         ?: getSharedPreferences("organizer_mvp_selection", Context.MODE_PRIVATE).getString("selected_event_id", null)
         ?: ""
 
+private fun AppCompatActivity.intentEventId(): String? =
+    intent.getStringExtra(EXTRA_EVENT_ID)?.takeIf { it.isNotBlank() }
+
+private fun AppCompatActivity.intentEventTitle(): String? =
+    intent.getStringExtra(EXTRA_EVENT_TITLE)?.takeIf { it.isNotBlank() }
+
 private fun AppCompatActivity.saveSelectedEventId(eventId: String?) {
     getSharedPreferences("organizer_mvp_selection", Context.MODE_PRIVATE).edit().apply {
         if (eventId.isNullOrBlank()) remove("selected_event_id") else putString("selected_event_id", eventId)
@@ -192,22 +199,38 @@ private fun AppCompatActivity.saveSelectedEventId(eventId: String?) {
 }
 
 private fun List<OrganizerMvpEvent>.approvedOnly(): List<OrganizerMvpEvent> =
-    filter { it.status.equals("Approved", ignoreCase = true) || it.status.equals("Completed", ignoreCase = true) }
+    filter {
+        it.status.equals("Approved", ignoreCase = true) ||
+            it.status.equals("Active", ignoreCase = true) ||
+            it.status.equals("Completed", ignoreCase = true)
+    }
 
-private fun AppCompatActivity.resolveSelectedEvent(events: List<OrganizerMvpEvent>): OrganizerMvpEvent? {
+private fun AppCompatActivity.resolveSelectedEvent(events: List<OrganizerMvpEvent>, requestedEventId: String? = null): OrganizerMvpEvent? {
     val approved = events.approvedOnly()
-    val selected = approved.firstOrNull { it.id == selectedEventId() } ?: approved.firstOrNull()
+    val selected = if (requestedEventId.isNullOrBlank()) {
+        approved.firstOrNull { it.id == selectedEventId() } ?: approved.firstOrNull()
+    } else {
+        approved.firstOrNull { it.id == requestedEventId }
+    }
     saveSelectedEventId(selected?.id)
     return selected
 }
 
-private fun AppCompatActivity.openOrganizerPage(target: Class<*>, eventId: String? = null) {
+private fun AppCompatActivity.openOrganizerPage(target: Class<*>, eventId: String? = null, eventTitle: String? = null) {
     val intent = Intent(this, target)
     eventId?.let {
         saveSelectedEventId(it)
         intent.putExtra(EXTRA_EVENT_ID, it)
     }
+    eventTitle?.takeIf { it.isNotBlank() }?.let { intent.putExtra(EXTRA_EVENT_TITLE, it) }
     startActivity(intent)
+}
+
+private fun AppCompatActivity.showMissingEventScreen(screenTitle: String) {
+    organizerShell(screenTitle, "Event ID is missing.", showBack = true)
+        .addView(emptyState("Open this screen from My Events or the event hub.", "Open My Events") {
+            openOrganizerPage(ManageEventsActivity::class.java)
+        })
 }
 
 private fun AppCompatActivity.organizerShell(
@@ -410,7 +433,7 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
             openOrganizerPage(ManageScanPurposesActivity::class.java, selectedEventId().ifBlank { null })
         }
         findViewById<View>(R.id.btnRewardManagement).setOnClickListener {
-            openOrganizerPage(ManageRewardsActivity::class.java, selectedEventId().ifBlank { null })
+            openOrganizerPage(TransactionLogsActivity::class.java, selectedEventId().ifBlank { null })
         }
         findViewById<View>(R.id.btnReportsAnalytics).setOnClickListener {
             openOrganizerPage(EventReportsActivity::class.java, selectedEventId().ifBlank { null })
@@ -443,7 +466,7 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.txtActiveEventName).text = selected.title
             findViewById<TextView>(R.id.txtActiveEventDetails).text = "${selected.shortDate} • ${selected.registeredCount} attendees"
             findViewById<View>(R.id.cardActiveEvent).setOnClickListener {
-                openOrganizerPage(ManageEventsActivity::class.java, selected.id)
+                openOrganizerPage(ManageEventsActivity::class.java, selected.id, selected.title)
             }
         }
 
@@ -540,7 +563,13 @@ open class ManageEventsActivity : AppCompatActivity() {
         eventList.removeAllViews()
         dataSourceBanner(eventsSource)?.let { eventList.addView(it) }
         if (events.isEmpty()) {
-            eventList.addView(emptyState("No organizer-owned events match your search/filter."))
+            eventList.addView(
+                if (eventsSource.source == OrganizerMvpDataSource.ERROR) {
+                    errorState(eventsSource.message ?: "Organizer events could not be loaded.") { loadEvents() }
+                } else {
+                    emptyState("No organizer-owned events match your search/filter.")
+                }
+            )
             detail.removeAllViews()
             return
         }
@@ -566,14 +595,12 @@ open class ManageEventsActivity : AppCompatActivity() {
             addView(header)
             addView(text("Registration: ${event.submittedDate} - ${event.registrationCloseDate}", 12, false, MUTED))
             addView(text("Capacity: ${event.capacity} | Registered: ${event.registeredCount} | Available: ${event.availableSlots}", 12, false, MUTED))
-            if (event.status == "Approved" || event.status == "Completed") {
-                addView(primaryButton("Manage Event") {
-                    selectedEvent = event
-                    repository.saveSelectedEventId(event.id)
-                    saveSelectedEventId(event.id)
-                    renderDetail(event)
-                })
+            setOnClickListener {
+                openOrganizerPage(EventManagementHubActivity::class.java, event.id, event.title)
             }
+            addView(primaryButton("Manage Event") {
+                openOrganizerPage(EventManagementHubActivity::class.java, event.id, event.title)
+            })
         }
 
     private fun renderDetail(event: OrganizerMvpEvent) {
@@ -612,9 +639,58 @@ open class ManageEventsActivity : AppCompatActivity() {
             "Reward Management" to ManageRewardsActivity::class.java,
             "Point Rules" to PointRulesPlaceholderActivity::class.java,
         ).forEach { (label, target) ->
-            detail.addView(ghostButton(label) { openOrganizerPage(target, event.id) })
+            detail.addView(ghostButton(label) { openOrganizerPage(target, event.id, event.title) })
         }
         detail.addView(stateCard())
+    }
+}
+
+open class EventManagementHubActivity : AppCompatActivity() {
+    private lateinit var repository: OrganizerRepository
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        repository = OrganizerRepository(this)
+        val eventId = intentEventId() ?: return showMissingEventScreen("Event Management")
+        val content = organizerShell("Event Management", intentEventTitle(), showBack = true)
+        content.addView(loadingState("Loading event details..."))
+
+        MainScope().launch {
+            val load = repository.loadEventsForMvp()
+            val event = load.data.firstOrNull { it.id == eventId }
+            content.removeAllViews()
+            dataSourceBanner(load)?.let { content.addView(it) }
+            if (event == null) {
+                content.addView(emptyState("Event not found or not available for organizer management.", "Open My Events") {
+                    openOrganizerPage(ManageEventsActivity::class.java)
+                })
+                return@launch
+            }
+
+            content.addView(card().apply {
+                addView(text(event.title, 18, true))
+                addView(text("${event.dateTime}\n${event.venue}", 13, false, MUTED))
+                addView(text("Status: ${event.status}", 13, true, PRIMARY))
+                addView(text("Registered: ${event.registeredCount} / Capacity: ${event.capacity}", 13, false, MUTED))
+                addView(text("Available slots: ${event.availableSlots}", 13, false, MUTED))
+                addView(text(event.description.ifBlank { "No description available." }, 13, false, MUTED))
+            })
+
+            content.addView(section("Management Options"))
+            listOf(
+                "Attendees" to AttendeeManagementActivity::class.java,
+                "Staff Access" to ManageUsersActivity::class.java,
+                "Scan Purposes" to ManageScanPurposesActivity::class.java,
+                "Transaction Rules" to TransactionRulesActivity::class.java,
+                "Transaction Logs" to TransactionLogsActivity::class.java,
+                "Reports" to EventReportsActivity::class.java,
+                "ID Template" to IdTemplatePlaceholderActivity::class.java,
+                "Rewards" to ManageRewardsActivity::class.java,
+                "Point Rules" to PointRulesPlaceholderActivity::class.java,
+            ).forEach { (label, target) ->
+                content.addView(ghostButton(label) { openOrganizerPage(target, event.id, event.title) })
+            }
+        }
     }
 }
 
@@ -632,7 +708,8 @@ open class AttendeeManagementActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = OrganizerRepository(this)
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents()) ?: return noEvent()
+        val eventId = intentEventId() ?: return showMissingEventScreen("Attendee Management")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Attendee Management")
         val content = organizerShell("Attendee Management", selectedEvent.title, NAV_ATTENDEES)
         val approved = repository.getApprovedOrganizerEvents().approvedOnly()
         if (approved.size > 1) content.addView(eventSelector(repository.getApprovedOrganizerEvents(), selectedEvent.id) {
@@ -651,7 +728,7 @@ open class AttendeeManagementActivity : AppCompatActivity() {
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         detail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(search)
-        content.addView(filterChips(listOf("All", "Registered", "Checked In / Entered", "Not Checked In", "Attended", "Exited", "No-show")) {
+        content.addView(filterChips(listOf("All", "Registered", "Entered", "Exited")) {
             filter = it
             render()
         })
@@ -705,7 +782,9 @@ open class AttendeeManagementActivity : AppCompatActivity() {
         val attendees = allAttendees.filter {
             val matchesStatus = when (filter) {
                 "All" -> true
-                "Not Checked In" -> it.currentEventStatus == "No-show" || it.currentEventStatus == "Registered"
+                "Registered" -> it.registrationStatus.equals("Registered", true)
+                "Entered" -> it.currentEventStatus == "Checked In / Entered" || it.currentEventStatus == "Attended"
+                "Exited" -> it.currentEventStatus == "Exited"
                 else -> it.currentEventStatus.equals(filter, true) || it.registrationStatus.equals(filter, true)
             }
             matchesStatus && (
@@ -717,7 +796,11 @@ open class AttendeeManagementActivity : AppCompatActivity() {
         }
         list.removeAllViews()
         if (attendees.isEmpty()) {
-            list.addView(emptyState("No attendee records found for this view."))
+            list.addView(if (attendeesSource.source == OrganizerMvpDataSource.ERROR) {
+                errorState(attendeesSource.message ?: "Attendees could not be loaded.") { loadAttendees() }
+            } else {
+                emptyState("No attendees registered yet.")
+            })
             detail.removeAllViews()
             return
         }
@@ -756,7 +839,7 @@ open class AttendeeManagementActivity : AppCompatActivity() {
             addView(text(attendee.recentTransactions.ifEmpty { listOf("No recent transactions.") }.joinToString("\n"), 13, false, MUTED))
             addView(section("Recent Rejected Scans"))
             addView(text(attendee.recentRejectedScans.ifEmpty { listOf("No recent rejected scans.") }.joinToString("\n"), 13, false, MUTED))
-            addView(ghostButton("View transactions") { openOrganizerPage(TransactionLogsActivity::class.java, selectedEvent.id) })
+            addView(ghostButton("View transactions") { openOrganizerPage(TransactionLogsActivity::class.java, selectedEvent.id, selectedEvent.title) })
             addView(ghostButton("Reprint ID") { Toast.makeText(this@AttendeeManagementActivity, "ID reprint flow is not wired on this screen.", Toast.LENGTH_SHORT).show() })
             addView(ghostButton("Manual support note") { Toast.makeText(this@AttendeeManagementActivity, "Support notes are not wired on this screen.", Toast.LENGTH_SHORT).show() })
         })
@@ -778,8 +861,9 @@ open class TransactionLogsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = OrganizerRepository(this)
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents()) ?: return noEvent()
-        val content = organizerShell("Transaction Logs", selectedEvent.title, NAV_LOGS, showBack = selectedEventId().isNotBlank())
+        val eventId = intentEventId() ?: return showMissingEventScreen("Transaction Logs")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Transaction Logs")
+        val content = organizerShell("Transaction Logs", selectedEvent.title, NAV_LOGS, showBack = true)
         if (repository.getApprovedOrganizerEvents().approvedOnly().size > 1) {
             content.addView(eventSelector(repository.getApprovedOrganizerEvents(), selectedEvent.id) {
                 selectedEvent = it
@@ -797,7 +881,7 @@ open class TransactionLogsActivity : AppCompatActivity() {
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         detail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(search)
-        content.addView(filterChips(listOf("All", "Successful", "Rejected", "Entry", "Attendance", "Benefit Claim", "Booth/Session Visit", "Reward Redemption", "Exit")) {
+        content.addView(filterChips(listOf("All", "Approved", "Rejected")) {
             filter = it
             render()
         })
@@ -834,7 +918,7 @@ open class TransactionLogsActivity : AppCompatActivity() {
         summary.removeAllViews()
         summary.addView(row().apply {
             addView(summaryCard("Total Scans", logs.size.toString()))
-            addView(summaryCard("Successful", logs.count { it.status == "Successful" }.toString(), SUCCESS))
+            addView(summaryCard("Approved", logs.count { it.status == "Approved" }.toString(), SUCCESS))
             addView(summaryCard("Rejected", logs.count { it.status == "Rejected" }.toString(), ERROR))
         })
         dataSourceBanner(logsSource)?.let { summary.addView(it) }
@@ -846,9 +930,7 @@ open class TransactionLogsActivity : AppCompatActivity() {
         renderSummary(allLogs)
         val logs = allLogs.filter {
             val matchesFilter = filter == "All" ||
-                it.status.equals(filter, true) ||
-                it.type.equals(filter, true) ||
-                (filter == "Booth/Session Visit" && it.type.contains("Visit", true))
+                it.status.equals(filter, true)
             val matchesQuery = listOf(it.attendeeName, it.qrId, it.id, it.staffName, it.eventTitle).any { value ->
                 value.contains(q, true)
             }
@@ -870,14 +952,13 @@ open class TransactionLogsActivity : AppCompatActivity() {
             top.addView(text(log.attendeeName, 16, true).apply {
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             })
-            top.addView(badge(if (log.status == "Successful") "Accepted" else "Rejected"))
+            top.addView(badge(log.status))
             addView(top)
+            addView(text("${log.type} • ${log.status}", 12, true, if (log.status == "Rejected") ERROR else SUCCESS))
             addView(text(log.eventTitle, 12, false, MUTED))
-            addView(text("${log.id} | ${log.scanPurpose}", 12, false, MUTED))
+            addView(text("Staff: ${log.staffName}", 12, false, MUTED))
             addView(text(log.timestamp, 12, false, MUTED))
-            addView(text("Staff: ${log.staffName} (${log.staffId})", 12, false, MUTED))
             if (log.status == "Rejected") addView(text("Reason: ${log.reason}", 12, true, ERROR))
-            addView(text(log.message, 13, false, if (log.status == "Rejected") ERROR else SUCCESS))
             setOnClickListener { renderDetail(log) }
         }
 
@@ -911,7 +992,8 @@ open class EventReportsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = OrganizerRepository(this)
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents()) ?: return noEvent()
+        val eventId = intentEventId() ?: return showMissingEventScreen("Event Reports")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Event Reports")
         val content = organizerShell("Event Reports", selectedEvent.title, NAV_REPORTS, topRightLabel = "Export") {
             // TODO: Connect to backend export/download implementation.
             Toast.makeText(this, "Export/download placeholder", Toast.LENGTH_SHORT).show()
@@ -948,6 +1030,20 @@ open class EventReportsActivity : AppCompatActivity() {
         val liveReport = reportDto
         report.removeAllViews()
         reportSource?.let { dataSourceBanner(it)?.let { banner -> report.addView(banner) } }
+        if (liveReport == null && reportSource?.source != OrganizerMvpDataSource.BACKEND) {
+            report.addView(emptyState("Reports will appear after registrations and scans are recorded."))
+            return
+        }
+        val isEmptyReport = liveReport != null &&
+            liveReport.totalRegistered == 0 &&
+            liveReport.enteredCount == 0 &&
+            liveReport.exitedCount == 0 &&
+            liveReport.approvedTransactionCount == 0 &&
+            liveReport.rejectedTransactionCount == 0
+        if (isEmptyReport) {
+            report.addView(emptyState("Reports will appear after registrations and scans are recorded."))
+            return
+        }
         report.addView(row().apply {
             addView(summaryCard("Registered", (liveReport?.totalRegistered ?: reportEvent.registeredCount).toString(), Color.parseColor("#3B82F6")))
             addView(summaryCard("Entered", (liveReport?.enteredCount ?: reportEvent.enteredCount).toString(), SUCCESS))
@@ -1024,8 +1120,9 @@ open class ManageUsersActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = OrganizerRepository(this)
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents()) ?: return noEvent()
-        val content = organizerShell("Staff Management", selectedEvent.title, showBack = true, topRightLabel = "+") {
+        val eventId = intentEventId() ?: return showMissingEventScreen("Staff Access")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Staff Access")
+        val content = organizerShell("Staff Access", selectedEvent.title, showBack = true, topRightLabel = "+") {
             renderSearch(showOnlyWhenQuery = false)
         }
         content.addView(card().apply {
@@ -1051,7 +1148,7 @@ open class ManageUsersActivity : AppCompatActivity() {
     }
 
     private fun noEvent() {
-        organizerShell("Staff Management", showBack = true)
+        organizerShell("Staff Access", showBack = true)
             .addView(emptyState("No approved event is selected.", "Open My Events") { openOrganizerPage(ManageEventsActivity::class.java) })
     }
 
@@ -1191,7 +1288,8 @@ open class ManageScanPurposesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = OrganizerRepository(this)
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents()) ?: return noEvent()
+        val eventId = intentEventId() ?: return showMissingEventScreen("Scan Purposes")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Scan Purposes")
         val content = organizerShell("Scan Purposes", selectedEvent.title, showBack = true)
         content.addView(card().apply {
             background = rounded(Color.parseColor("#E5E7EB"), 12, Color.parseColor("#C7CAD1"), density = resources.displayMetrics.density)
@@ -1257,6 +1355,9 @@ open class ManageScanPurposesActivity : AppCompatActivity() {
             addView(summaryCard("Active Purposes", purposes.count { it.enabled }.toString()))
             addView(summaryCard("With Points", purposes.count { it.pointsEnabled }.toString(), SUCCESS))
         })
+        if (purposes.isEmpty()) {
+            purposeHost.addView(emptyState("No scan purposes configured yet."))
+        }
         rulesHost.addView(card().apply {
             addView(text("Transaction Rules", 16, true))
             addView(text("Loaded from the backend for this event.", 12, false, MUTED))
@@ -1386,7 +1487,8 @@ open class TransactionRulesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = OrganizerRepository(this)
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents()) ?: return noEvent()
+        val eventId = intentEventId() ?: return showMissingEventScreen("Transaction Rules")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Transaction Rules")
         val content = organizerShell("Transaction Rules", selectedEvent.title, showBack = true)
         content.addView(card().apply {
             addView(text("Event", 12, false, MUTED))
@@ -1422,7 +1524,7 @@ open class TransactionRulesActivity : AppCompatActivity() {
         dataSourceBanner(source)?.let { host.addView(it) }
         if (source.data.isEmpty()) {
             host.addView(emptyState("No transaction rules configured yet.", "Open Scan Purposes") {
-                openOrganizerPage(ManageScanPurposesActivity::class.java, selectedEvent.id)
+                openOrganizerPage(ManageScanPurposesActivity::class.java, selectedEvent.id, selectedEvent.title)
             })
             return
         }
@@ -1488,7 +1590,7 @@ open class AttendeeDetailsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val attendeeId = intent.getStringExtra("extra_attendee_id").orEmpty()
-        val eventId = intent.getStringExtra(EXTRA_EVENT_ID).orEmpty()
+        val eventId = intentEventId().orEmpty()
         val content = organizerShell("Attendee Details", showBack = true)
         if (attendeeId.isBlank() || eventId.isBlank()) {
             content.addView(emptyState("Open attendee details from an event to view live records."))
@@ -1517,24 +1619,27 @@ open class ReportsActivity : EventReportsActivity()
 open class IdTemplatePlaceholderActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intentEventId() == null) return showMissingEventScreen("ID Template")
         organizerShell("ID Template", "Template preview is not configured for this event yet.", showBack = true)
-            .addView(emptyState("ID template management needs the backend template editor before it can be enabled."))
+            .addView(emptyState("Coming soon. ID template management is not configured for MVP yet."))
     }
 }
 
 open class ManageRewardsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intentEventId() == null) return showMissingEventScreen("Rewards")
         organizerShell("Reward Management", "Existing organizer reward page placeholder.", showBack = true)
-            .addView(emptyState("Reward management is not configured for this event yet."))
+            .addView(emptyState("Coming soon. Reward management is not configured for MVP yet."))
     }
 }
 
 open class PointRulesPlaceholderActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intentEventId() == null) return showMissingEventScreen("Point Rules")
         organizerShell("Point Rules", "Point rule editing is not enabled for this event yet.", showBack = true)
-            .addView(emptyState("Use scan-purpose and transaction-rule points for this pass. Dedicated point-rule editing can be enabled once the backend contract is finalized."))
+            .addView(emptyState("Coming soon. Point rule editing is not configured for MVP yet."))
     }
 }
 
