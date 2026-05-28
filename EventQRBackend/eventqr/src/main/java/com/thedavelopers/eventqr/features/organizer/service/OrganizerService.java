@@ -5,8 +5,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +51,7 @@ import com.thedavelopers.eventqr.shared.exceptions.ResourceNotFoundException;
 public class OrganizerService {
 
     private static final List<String> DEFAULT_PERMISSIONS = List.of("Scan QR", "View attendee details");
+    private static final Logger log = LoggerFactory.getLogger(OrganizerService.class);
 
     private final EventRepository eventRepository;
     private final EventRegistrationRepository registrationRepository;
@@ -271,28 +275,46 @@ public class OrganizerService {
     @Transactional(readOnly = true)
     public List<OrganizerStaffResponse> staff(UUID organizerUserId, UUID eventId) {
         requireOrganizerEvent(organizerUserId, eventId);
-        return staffAssignmentRepository.findByEventId(eventId).stream().map(this::toStaff).toList();
+        List<EventStaffAssignment> assignments = staffAssignmentRepository.findByEventId(eventId);
+        log.debug("Organizer staff fetch eventId={} count={}", eventId, assignments.size());
+        return assignments.stream().map(this::toStaff).toList();
     }
 
     public OrganizerStaffResponse addStaff(UUID organizerUserId, UUID eventId, StaffAssignmentRequest request) {
         requireOrganizerEvent(organizerUserId, eventId);
         UserProfile staffUser = resolveStaffUser(request);
-        if (staffUser.getRole() == AccountRole.ATTENDEE) {
-            staffUser.setRole(AccountRole.STAFF);
-            userProfileRepository.save(staffUser);
-        }
-        EventStaffAssignment assignment = staffAssignmentRepository.findByEventIdAndStaffUserId(eventId, staffUser.getId())
-                .orElseGet(() -> {
-                    EventStaffAssignment created = new EventStaffAssignment();
-                    created.setEventId(eventId);
-                    created.setStaffUserId(staffUser.getId());
-                    created.setAddedByUserId(organizerUserId);
-                    created.setAddedAt(Instant.now());
-                    return created;
-                });
-        if (assignment.isActive()) {
+        log.debug(
+                "Organizer staff add request eventId={} staffUserId={} email={}",
+                eventId,
+                staffUser.getId(),
+                request.email());
+
+        Optional<EventStaffAssignment> existingAssignment = staffAssignmentRepository
+                .findByEventIdAndStaffUserId(eventId, staffUser.getId());
+        log.debug("Organizer staff add duplicate-check eventId={} staffUserId={} exists={} active={}",
+                eventId,
+                staffUser.getId(),
+                existingAssignment.isPresent(),
+                existingAssignment.map(EventStaffAssignment::isActive).orElse(false));
+
+        if (existingAssignment.isPresent() && existingAssignment.get().isActive()) {
             throw new ConflictException("Staff member is already assigned to this event");
         }
+
+        boolean reactivatingExisting = existingAssignment.isPresent();
+        log.debug("Organizer staff add path eventId={} staffUserId={} mode={}",
+                eventId,
+                staffUser.getId(),
+                reactivatingExisting ? "REACTIVATE_EXISTING" : "CREATE_NEW");
+
+        EventStaffAssignment assignment = existingAssignment.orElseGet(() -> {
+            EventStaffAssignment created = new EventStaffAssignment();
+            created.setEventId(eventId);
+            created.setStaffUserId(staffUser.getId());
+            created.setAddedByUserId(organizerUserId);
+            created.setAddedAt(Instant.now());
+            return created;
+        });
 
         assignment.setRoleLabel(blankToDefault(request.roleLabel(), "SCANNER"));
         assignment.setPermissions(String.join(",", emptyToDefault(request.permissions(), DEFAULT_PERMISSIONS)));
@@ -302,7 +324,24 @@ public class OrganizerService {
         assignment.setCanManageRewards(boolOrDefault(request.canManageRewards(), false));
         applyPermissionOverrides(assignment, request.permissions());
         assignment.setActive(true);
-        return toStaff(staffAssignmentRepository.save(assignment));
+        EventStaffAssignment saved = staffAssignmentRepository.save(assignment);
+        log.debug("Organizer staff add persisted eventId={} staffUserId={} assignmentId={} active={} reactivated={}",
+                eventId,
+                staffUser.getId(),
+                saved.getId(),
+                saved.isActive(),
+                existingAssignment.isPresent());
+
+        if (staffUser.getRole() == AccountRole.ATTENDEE) {
+            staffUser.setRole(AccountRole.STAFF);
+            userProfileRepository.save(staffUser);
+            log.debug("Organizer staff add upgraded role eventId={} staffUserId={} fromRole=ATTENDEE toRole=STAFF",
+                    eventId, staffUser.getId());
+        } else {
+            log.debug("Organizer staff add kept role eventId={} staffUserId={} role={}",
+                    eventId, staffUser.getId(), staffUser.getRole());
+        }
+        return toStaff(saved);
     }
 
     public OrganizerStaffResponse updateStaff(UUID organizerUserId, UUID eventId, UUID assignmentId,

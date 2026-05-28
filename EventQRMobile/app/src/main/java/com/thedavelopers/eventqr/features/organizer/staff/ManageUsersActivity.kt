@@ -3,9 +3,11 @@ package com.thedavelopers.eventqr.features.organizer.staff
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.thedavelopers.eventqr.features.organizer.*
@@ -13,11 +15,16 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 open class ManageUsersActivity : AppCompatActivity() {
+    private companion object {
+        private const val TAG = "ManageUsersActivity"
+    }
+
     private lateinit var repository: OrganizerRepository
     private lateinit var selectedEvent: OrganizerMvpEvent
     private lateinit var search: EditText
     private lateinit var results: LinearLayout
     private lateinit var assigned: LinearLayout
+    private lateinit var totalStaffValue: TextView
     private val assignedStaff = mutableListOf<OrganizerMvpStaff>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,12 +32,14 @@ open class ManageUsersActivity : AppCompatActivity() {
         repository = OrganizerRepository(this)
         val eventId = intentEventId() ?: return showMissingEventScreen("Staff Access")
         selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Staff Access")
+        Log.d(TAG, "onCreate selectedEventId=${selectedEvent.id}")
         val content = organizerShell("Staff Access", selectedEvent.title, showBack = true, topRightLabel = "+") {
             renderSearch(showOnlyWhenQuery = false)
         }
         content.addView(card().apply {
             addView(text("Total Staff", 12, false, MUTED))
-            addView(text(selectedEvent.staffCount.toString(), 24, true))
+            totalStaffValue = text("0", 24, true)
+            addView(totalStaffValue)
         })
         content.addView(primaryButton("+ Add Staff Member") { renderSearch(showOnlyWhenQuery = false) })
         search = EditText(this).apply {
@@ -53,6 +62,7 @@ open class ManageUsersActivity : AppCompatActivity() {
     private fun renderSearch(showOnlyWhenQuery: Boolean = true) {
         if (!::results.isInitialized) return
         val query = search.text.toString()
+        Log.d(TAG, "renderSearch query=\"$query\" showOnlyWhenQuery=$showOnlyWhenQuery eventId=${selectedEvent.id}")
         results.removeAllViews()
         if (showOnlyWhenQuery && query.isBlank()) {
             results.addView(text("Search by name or email to add staff.", 13, false, MUTED))
@@ -73,28 +83,57 @@ open class ManageUsersActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderAssigned() {
+    private fun renderAssigned(): Int {
         assigned.removeAllViews()
-        val staff = assignedStaff.filter { it.assignedEventId == selectedEvent.id }
+        val staff = assignedStaff.filter {
+            it.assignedEventId.isBlank() || it.assignedEventId == selectedEvent.id
+        }
+        totalStaffValue.text = staff.size.toString()
         if (staff.isEmpty()) {
             assigned.addView(emptyState("Empty staff list. Add staff members before event day."))
-            return
+            return 0
         }
         staff.forEach { assigned.addView(staffCard(it, false)) }
         assigned.addView(stateCard())
+        return staff.size
     }
 
-    private fun loadAssigned() {
+    private fun loadAssigned(showAlreadyAssignedRefreshFailureIfEmpty: Boolean = false) {
         assigned.removeAllViews()
         assigned.addView(loadingState("Loading staff..."))
         MainScope().launch {
             val source = repository.loadStaffForMvp(selectedEvent)
+            Log.d(
+                TAG,
+                "loadAssigned result eventId=${selectedEvent.id} source=${source.source} message=${source.message} count=${source.data.size}",
+            )
             assignedStaff.clear()
-            assignedStaff.addAll(source.data)
+            source.data.forEach { incoming ->
+                val existingIndex = assignedStaff.indexOfFirst { existing ->
+                    existing.id == incoming.id ||
+                        (
+                            existing.email.equals(incoming.email, ignoreCase = true) &&
+                                existing.assignedEventId == incoming.assignedEventId
+                            )
+                }
+                if (existingIndex >= 0) {
+                    assignedStaff[existingIndex] = incoming
+                } else {
+                    assignedStaff.add(incoming)
+                }
+            }
             source.message?.let {
                 Toast.makeText(this@ManageUsersActivity, it, Toast.LENGTH_SHORT).show()
             }
-            renderAssigned()
+            val renderedCount = renderAssigned()
+            if (showAlreadyAssignedRefreshFailureIfEmpty && renderedCount == 0) {
+                Toast.makeText(
+                    this@ManageUsersActivity,
+                    "Staff is already assigned, but assigned staff list could not be refreshed.",
+                    Toast.LENGTH_LONG,
+                ).show()
+                Log.w(TAG, "already-assigned refresh completed with empty rendered list for eventId=${selectedEvent.id}")
+            }
         }
     }
 
@@ -112,18 +151,32 @@ open class ManageUsersActivity : AppCompatActivity() {
             addView(text("Added: ${staff.addedDate}", 12, false, MUTED))
             if (canAdd) {
                 addView(primaryButton("Add staff to event") {
-                    if (assignedStaff.any { it.email.equals(staff.email, ignoreCase = true) && it.accessStatus.equals("Active", ignoreCase = true) }) {
+                    Log.d(TAG, "addStaff click eventId=${selectedEvent.id} staffId=${staff.id} email=${staff.email}")
+                    if (assignedStaff.any {
+                            it.assignedEventId == selectedEvent.id &&
+                                (
+                                    it.id == staff.id ||
+                                        it.email.equals(staff.email, ignoreCase = true)
+                                    ) &&
+                                it.accessStatus.equals("Active", ignoreCase = true)
+                        }) {
                         Toast.makeText(this@ManageUsersActivity, "Duplicate staff assignment", Toast.LENGTH_SHORT).show()
                     } else {
                         MainScope().launch {
                             val source = repository.addStaffForMvp(selectedEvent, staff)
-                            if (source.source == OrganizerMvpDataSource.BACKEND) {
-                                assignedStaff.add(source.data)
-                            }
+                            Log.d(
+                                TAG,
+                                "addStaff result eventId=${selectedEvent.id} source=${source.source} message=${source.message}",
+                            )
                             source.message?.let {
                                 Toast.makeText(this@ManageUsersActivity, it, Toast.LENGTH_SHORT).show()
                             }
-                            renderAssigned()
+                            val alreadyAssigned = source.message?.contains("already assigned", ignoreCase = true) == true
+                            if (source.source == OrganizerMvpDataSource.BACKEND || alreadyAssigned) {
+                                loadAssigned(showAlreadyAssignedRefreshFailureIfEmpty = alreadyAssigned)
+                            } else {
+                                renderAssigned()
+                            }
                         }
                     }
                 })
