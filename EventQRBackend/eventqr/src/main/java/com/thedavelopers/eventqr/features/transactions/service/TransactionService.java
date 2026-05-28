@@ -80,11 +80,17 @@ public class TransactionService {
         validateStaff(request.eventId(), request.staffUserId(), rule.isRequiresStaffAssignment());
         var qrSnapshot = qrCredentialPort.findByQrValue(request.qrValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid QR credential"));
+        if (!qrSnapshot.active()) {
+            throw new ForbiddenException("Inactive QR credential");
+        }
         if (!eventSnapshot.eventId().equals(qrSnapshot.eventId())) {
             throw new ForbiddenException("Wrong event QR");
         }
         var registration = registrationLookupPort.findByQrCredentialId(qrSnapshot.qrCredentialId())
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found for QR credential"));
+        if (!eventSnapshot.eventId().equals(registration.eventId())) {
+            throw new ForbiddenException("Registration does not belong to selected event");
+        }
         return new ScanVerificationResponse(eventSnapshot.eventId(), registration.attendeeUserId(), registration.registrationId(),
                 qrSnapshot.qrCredentialId(), qrSnapshot.qrValue(), registration.attendeeName(), registration.attendeeEmail(),
                 registration.status(), purpose.scanPurposeId(), purpose.code(), qrSnapshot.active(),
@@ -106,29 +112,35 @@ public class TransactionService {
         if (!qrSnapshot.active()) {
             return reject(eventSnapshot.eventId(), qrSnapshot.attendeeUserId(), qrSnapshot.registrationId(),
                     qrSnapshot.qrCredentialId(), purpose.scanPurposeId(), request.staffUserId(), "Inactive QR credential",
-                    TransactionType.valueOf(purpose.code().name()), 0);
+                    TransactionType.valueOf(purpose.code().name()), 0, request.notes());
         }
         if (!eventSnapshot.eventId().equals(qrSnapshot.eventId())) {
             return reject(eventSnapshot.eventId(), qrSnapshot.attendeeUserId(), qrSnapshot.registrationId(),
                     qrSnapshot.qrCredentialId(), purpose.scanPurposeId(), request.staffUserId(), "Wrong event QR",
-                    TransactionType.valueOf(purpose.code().name()), 0);
+                    TransactionType.valueOf(purpose.code().name()), 0, request.notes());
         }
 
         var registration = registrationLookupPort.findByQrCredentialId(qrSnapshot.qrCredentialId())
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found for QR credential"));
+        if (!eventSnapshot.eventId().equals(registration.eventId())) {
+            return reject(eventSnapshot.eventId(), registration.attendeeUserId(), registration.registrationId(),
+                registration.qrCredentialId(), purpose.scanPurposeId(), request.staffUserId(),
+                "Registration does not belong to selected event",
+                TransactionType.valueOf(purpose.code().name()), 0, request.notes());
+        }
 
     String duplicateReason = determineDuplicateReason(purpose.code().name(), registration, rule);
         if (duplicateReason != null) {
             return reject(eventSnapshot.eventId(), registration.attendeeUserId(), registration.registrationId(),
                     registration.qrCredentialId(), purpose.scanPurposeId(), request.staffUserId(), duplicateReason,
-                    TransactionType.valueOf(purpose.code().name()), 0);
+                TransactionType.valueOf(purpose.code().name()), 0, request.notes());
         }
 
         TransactionType transactionType = TransactionType.valueOf(purpose.code().name());
         int pointsDelta = purpose.trackingOnly() ? 0 : Math.max(0, rule.getPointsAwarded());
         TransactionLog log = createLog(eventSnapshot.eventId(), registration.attendeeUserId(), registration.registrationId(),
                 registration.qrCredentialId(), purpose.scanPurposeId(), request.staffUserId(), TransactionResult.APPROVED,
-                transactionType, pointsDelta, null);
+            transactionType, pointsDelta, null, request.notes());
 
         applyTransactionEffects(transactionType, registration.registrationId());
 
@@ -196,8 +208,12 @@ public class TransactionService {
                 || (staff.role() != AccountRole.STAFF && staff.role() != AccountRole.ORGANIZER && staff.role() != AccountRole.ADMIN)) {
             throw new ForbiddenException("Staff user is not authorized for this scan");
         }
-        if (requiresStaffAssignment && staff.role() == AccountRole.STAFF && !eventStaffAssignmentRepository.existsByEventIdAndStaffUserId(eventId, staffUserId)) {
-            throw new ForbiddenException("Staff user is not assigned to this event");
+        if (requiresStaffAssignment && staff.role() == AccountRole.STAFF) {
+            var assignment = eventStaffAssignmentRepository.findByEventIdAndStaffUserIdAndActiveTrue(eventId, staffUserId)
+                    .orElseThrow(() -> new ForbiddenException("Staff user is not assigned to this event"));
+            if (!assignment.isCanScan()) {
+                throw new ForbiddenException("Staff user is not allowed to scan for this event");
+            }
         }
     }
 
@@ -259,9 +275,9 @@ public class TransactionService {
 
     private TransactionResponse reject(UUID eventId, UUID attendeeUserId, UUID registrationId, UUID qrCredentialId,
                                        UUID scanPurposeId, UUID staffUserId, String reason,
-                                       TransactionType transactionType, int pointsDelta) {
+                           TransactionType transactionType, int pointsDelta, String notes) {
         TransactionLog log = createLog(eventId, attendeeUserId, registrationId, qrCredentialId, scanPurposeId, staffUserId,
-                TransactionResult.REJECTED, transactionType, pointsDelta, reason);
+            TransactionResult.REJECTED, transactionType, pointsDelta, reason, notes);
         TransactionLog saved = transactionLogRepository.save(log);
         applicationEventPublisher.publishEvent(new TransactionRecordedEvent(saved.getId(), saved.getEventId(),
                 saved.getAttendeeUserId(), saved.getRegistrationId(), saved.getQrCredentialId(), saved.getScanPurposeId(),
@@ -272,7 +288,7 @@ public class TransactionService {
 
     private TransactionLog createLog(UUID eventId, UUID attendeeUserId, UUID registrationId, UUID qrCredentialId,
                                      UUID scanPurposeId, UUID staffUserId, TransactionResult result,
-                                     TransactionType transactionType, int pointsDelta, String reason) {
+                                     TransactionType transactionType, int pointsDelta, String reason, String notes) {
         TransactionLog log = new TransactionLog();
         log.setEventId(eventId);
         log.setAttendeeUserId(attendeeUserId);
@@ -284,6 +300,9 @@ public class TransactionService {
         log.setTransactionResult(result);
         log.setPointsDelta(pointsDelta);
         log.setReason(reason);
+        if (notes != null && !notes.isBlank()) {
+            log.setMetadata("{\"notes\":\"" + notes.replace("\"", "\\\"") + "\"}");
+        }
         log.setScannedAt(Instant.now());
         return log;
     }

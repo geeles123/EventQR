@@ -19,23 +19,36 @@ import lombok.Setter;
         uniqueConstraints = @UniqueConstraint(name = "uq_event_staff_assignment", columnNames = {"event_id", "staff_user_id"}))
 public class EventStaffAssignment extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "event_id", nullable = false)
     private UUID eventId;
 
-    @Column(nullable = false)
+    @Column(name = "staff_user_id", nullable = false)
     private UUID staffUserId;
 
-    @Column(nullable = false)
-    private String roleLabel = "Scanner";
+    @Column(name = "staff_role", nullable = false)
+    private String roleLabel = "SCANNER";
 
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "can_scan", nullable = false)
+    private boolean canScan = true;
+
+    @Column(name = "can_print_id", nullable = false)
+    private boolean canPrintId = false;
+
+    @Column(name = "can_view_logs", nullable = false)
+    private boolean canViewLogs = false;
+
+    @Column(name = "can_manage_rewards", nullable = false)
+    private boolean canManageRewards = false;
+
     @Column(length = 2000)
     private String permissions;
 
+    @Column(name = "added_by_user_id")
     private UUID addedByUserId;
 
-    @Column(nullable = false)
+    @Column(name = "added_at", nullable = false)
     private Instant addedAt = Instant.now();
 }

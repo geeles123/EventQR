@@ -56,14 +56,19 @@ public final class OrganizerDtos {
     }
 
     public record OrganizerStaffResponse(UUID assignmentId, UUID eventId, UUID staffUserId, String name, String email,
-                                         String roleLabel, boolean active, List<String> permissions, Instant addedAt) {
+                                         String roleLabel, boolean active, boolean canScan, boolean canPrintId,
+                                         boolean canViewLogs, boolean canManageRewards,
+                                         List<String> permissions, Instant addedAt) {
     }
 
     public record StaffAssignmentRequest(UUID staffUserId, String email, String name, String roleLabel,
-                                         List<String> permissions) {
+                                         Boolean canScan, Boolean canPrintId, Boolean canViewLogs,
+                                         Boolean canManageRewards, List<String> permissions) {
     }
 
-    public record StaffAssignmentUpdateRequest(Boolean active, String roleLabel, List<String> permissions) {
+    public record StaffAssignmentUpdateRequest(Boolean active, String roleLabel,
+                                               Boolean canScan, Boolean canPrintId, Boolean canViewLogs,
+                                               Boolean canManageRewards, List<String> permissions) {
     }
 
     public record OrganizerScanPurposeResponse(UUID scanPurposeId, UUID eventId, String title, String description,

@@ -253,21 +253,31 @@ public class OrganizerService {
     public OrganizerStaffResponse addStaff(UUID organizerUserId, UUID eventId, StaffAssignmentRequest request) {
         requireOrganizerEvent(organizerUserId, eventId);
         UserProfile staffUser = resolveStaffUser(request);
-        if (staffAssignmentRepository.existsByEventIdAndStaffUserId(eventId, staffUser.getId())) {
-            throw new ConflictException("Staff member is already assigned to this event");
-        }
         if (staffUser.getRole() == AccountRole.ATTENDEE) {
             staffUser.setRole(AccountRole.STAFF);
             userProfileRepository.save(staffUser);
         }
-        EventStaffAssignment assignment = new EventStaffAssignment();
-        assignment.setEventId(eventId);
-        assignment.setStaffUserId(staffUser.getId());
-        assignment.setRoleLabel(blankToDefault(request.roleLabel(), "Scanner"));
+        EventStaffAssignment assignment = staffAssignmentRepository.findByEventIdAndStaffUserId(eventId, staffUser.getId())
+                .orElseGet(() -> {
+                    EventStaffAssignment created = new EventStaffAssignment();
+                    created.setEventId(eventId);
+                    created.setStaffUserId(staffUser.getId());
+                    created.setAddedByUserId(organizerUserId);
+                    created.setAddedAt(Instant.now());
+                    return created;
+                });
+        if (assignment.isActive()) {
+            throw new ConflictException("Staff member is already assigned to this event");
+        }
+
+        assignment.setRoleLabel(blankToDefault(request.roleLabel(), "SCANNER"));
         assignment.setPermissions(String.join(",", emptyToDefault(request.permissions(), DEFAULT_PERMISSIONS)));
+        assignment.setCanScan(boolOrDefault(request.canScan(), true));
+        assignment.setCanPrintId(boolOrDefault(request.canPrintId(), false));
+        assignment.setCanViewLogs(boolOrDefault(request.canViewLogs(), false));
+        assignment.setCanManageRewards(boolOrDefault(request.canManageRewards(), false));
+        applyPermissionOverrides(assignment, request.permissions());
         assignment.setActive(true);
-        assignment.setAddedByUserId(organizerUserId);
-        assignment.setAddedAt(Instant.now());
         return toStaff(staffAssignmentRepository.save(assignment));
     }
 
@@ -281,8 +291,21 @@ public class OrganizerService {
         if (request.roleLabel() != null && !request.roleLabel().isBlank()) {
             assignment.setRoleLabel(request.roleLabel().trim());
         }
+        if (request.canScan() != null) {
+            assignment.setCanScan(request.canScan());
+        }
+        if (request.canPrintId() != null) {
+            assignment.setCanPrintId(request.canPrintId());
+        }
+        if (request.canViewLogs() != null) {
+            assignment.setCanViewLogs(request.canViewLogs());
+        }
+        if (request.canManageRewards() != null) {
+            assignment.setCanManageRewards(request.canManageRewards());
+        }
         if (request.permissions() != null) {
             assignment.setPermissions(String.join(",", request.permissions()));
+            applyPermissionOverrides(assignment, request.permissions());
         }
         return toStaff(staffAssignmentRepository.save(assignment));
     }
@@ -290,7 +313,8 @@ public class OrganizerService {
     public void removeStaff(UUID organizerUserId, UUID eventId, UUID assignmentId) {
         requireOrganizerEvent(organizerUserId, eventId);
         EventStaffAssignment assignment = requireAssignment(eventId, assignmentId);
-        staffAssignmentRepository.delete(assignment);
+        assignment.setActive(false);
+        staffAssignmentRepository.save(assignment);
     }
 
     @Transactional(readOnly = true)
@@ -519,7 +543,8 @@ public class OrganizerService {
         UserProfile user = userProfileRepository.findById(assignment.getStaffUserId()).orElse(null);
         return new OrganizerStaffResponse(assignment.getId(), assignment.getEventId(), assignment.getStaffUserId(),
                 user == null ? "Unknown staff" : user.getFullName(), user == null ? "" : user.getEmail(),
-                assignment.getRoleLabel(), assignment.isActive(), splitPermissions(assignment.getPermissions()),
+                assignment.getRoleLabel(), assignment.isActive(), assignment.isCanScan(), assignment.isCanPrintId(),
+                assignment.isCanViewLogs(), assignment.isCanManageRewards(), splitPermissions(assignment.getPermissions()),
                 assignment.getAddedAt());
     }
 
@@ -594,6 +619,21 @@ public class OrganizerService {
 
     private String blankToDefault(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private boolean boolOrDefault(Boolean value, boolean fallback) {
+        return value == null ? fallback : value;
+    }
+
+    private void applyPermissionOverrides(EventStaffAssignment assignment, List<String> permissions) {
+        if (permissions == null || permissions.isEmpty()) {
+            return;
+        }
+        String normalized = String.join("|", permissions).toLowerCase();
+        assignment.setCanScan(normalized.contains("scan"));
+        assignment.setCanPrintId(normalized.contains("print"));
+        assignment.setCanViewLogs(normalized.contains("log"));
+        assignment.setCanManageRewards(normalized.contains("reward"));
     }
 
     private String eventStatus(EventRegistration registration) {

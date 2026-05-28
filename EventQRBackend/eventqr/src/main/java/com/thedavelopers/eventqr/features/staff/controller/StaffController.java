@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.thedavelopers.eventqr.features.events.model.dto.EventResponse;
 import com.thedavelopers.eventqr.features.events.service.EventService;
+import com.thedavelopers.eventqr.features.organizer.model.entity.EventStaffAssignment;
 import com.thedavelopers.eventqr.features.organizer.repository.EventStaffAssignmentRepository;
 import com.thedavelopers.eventqr.features.qrcredentials.service.QrCredentialService;
 import com.thedavelopers.eventqr.features.registrations.model.dto.RegistrationResponse;
@@ -25,6 +26,7 @@ import com.thedavelopers.eventqr.features.rewards.model.dto.PointAdjustmentReque
 import com.thedavelopers.eventqr.features.rewards.model.dto.PointBalanceResponse;
 import com.thedavelopers.eventqr.features.rewards.service.RewardService;
 import com.thedavelopers.eventqr.features.scanpurposes.service.ScanPurposeService;
+import com.thedavelopers.eventqr.features.staff.model.dto.StaffAssignedEventResponse;
 import com.thedavelopers.eventqr.features.transactions.model.dto.ScanVerificationResponse;
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionRequest;
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse;
@@ -63,24 +65,40 @@ public class StaffController {
     }
 
     @GetMapping("/events")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> events(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<List<StaffAssignedEventResponse>>> events(HttpServletRequest request) {
         UUID staffUserId = currentUserId(request);
-        List<EventResponse> events = eventStaffAssignmentRepository.findByStaffUserId(staffUserId).stream()
-                .map(assignment -> eventService.findOne(assignment.getEventId()))
+        List<StaffAssignedEventResponse> events = eventStaffAssignmentRepository.findByStaffUserIdAndActiveTrue(staffUserId).stream()
+                .map(assignment -> {
+                    EventResponse event = eventService.findOne(assignment.getEventId());
+                    return new StaffAssignedEventResponse(
+                            assignment.getId(),
+                            event.eventId(),
+                            event.title(),
+                            event.description(),
+                            event.location(),
+                            event.eventStartAt(),
+                            event.eventEndAt(),
+                            event.status(),
+                            assignment.isCanScan(),
+                            assignment.isCanPrintId(),
+                            assignment.isCanViewLogs(),
+                            assignment.isCanManageRewards()
+                    );
+                })
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(events));
     }
 
     @GetMapping("/events/{eventId}")
     public ResponseEntity<ApiResponse<EventResponse>> event(HttpServletRequest request, @PathVariable UUID eventId) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         return ResponseEntity.ok(ApiResponse.success(eventService.findOne(eventId)));
     }
 
     @GetMapping("/events/{eventId}/scan-purposes")
     public ResponseEntity<ApiResponse<List<ScanPurposeSnapshot>>> scanPurposes(HttpServletRequest request,
                                                                               @PathVariable UUID eventId) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success(scanPurposeService.listByEventId(eventId).stream().filter(ScanPurposeSnapshot::active).toList()));
     }
 
@@ -88,7 +106,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<ScanVerificationResponse>> verify(HttpServletRequest request,
                                                                          @PathVariable UUID eventId,
                                                                          @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success(transactionService.verify(normalize(eventId, body))));
     }
 
@@ -96,7 +114,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> entry(HttpServletRequest request,
                                                                   @PathVariable UUID eventId,
                                                                   @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Entry recorded", transactionService.record(normalize(eventId, body))));
     }
 
@@ -104,7 +122,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> attendance(HttpServletRequest request,
                                                                       @PathVariable UUID eventId,
                                                                       @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Attendance recorded", transactionService.record(normalize(eventId, body))));
     }
 
@@ -112,7 +130,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> benefitClaim(HttpServletRequest request,
                                                                       @PathVariable UUID eventId,
                                                                       @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Benefit claim recorded", transactionService.record(normalize(eventId, body))));
     }
 
@@ -120,7 +138,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> boothVisit(HttpServletRequest request,
                                                                        @PathVariable UUID eventId,
                                                                        @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Booth visit recorded", transactionService.record(normalize(eventId, body))));
     }
 
@@ -128,7 +146,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> rewardRedemptionScan(HttpServletRequest request,
                                                                                @PathVariable UUID eventId,
                                                                                @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Reward redemption scan recorded", transactionService.record(normalize(eventId, body))));
     }
 
@@ -136,7 +154,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> exit(HttpServletRequest request,
                                                                   @PathVariable UUID eventId,
                                                                   @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Exit recorded", transactionService.record(normalize(eventId, body))));
     }
 
@@ -144,21 +162,21 @@ public class StaffController {
     public ResponseEntity<ApiResponse<TransactionResponse>> reject(HttpServletRequest request,
                                                                   @PathVariable UUID eventId,
                                                                   @Valid @RequestBody TransactionRequest body) {
-        requireAssignment(request, eventId);
+        requireScanPermission(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Scan rejected", transactionService.record(normalize(eventId, body))));
     }
 
     @GetMapping("/events/{eventId}/scan/latest")
     public ResponseEntity<ApiResponse<TransactionResponse>> latest(HttpServletRequest request,
                                                                    @PathVariable UUID eventId) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         return ResponseEntity.ok(ApiResponse.success(transactionService.latest(eventId)));
     }
 
     @GetMapping("/events/{eventId}/transactions")
     public ResponseEntity<ApiResponse<List<TransactionResponse>>> transactions(HttpServletRequest request,
                                                                               @PathVariable UUID eventId) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         return ResponseEntity.ok(ApiResponse.success(transactionService.findByEvent(eventId)));
     }
 
@@ -166,7 +184,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<RegistrationResponse>> attendee(HttpServletRequest request,
                                                                       @PathVariable UUID eventId,
                                                                       @PathVariable UUID attendeeId) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         RegistrationResponse registration = registrationService.findByAttendeeUserId(attendeeId).stream()
                 .filter(item -> item.eventId().equals(eventId))
                 .findFirst()
@@ -179,7 +197,7 @@ public class StaffController {
                                                                         @PathVariable UUID eventId,
                                                                         @PathVariable UUID rewardId,
                                                                         @Valid @RequestBody RewardRedemptionRequest body) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         RewardRedemptionRequest normalized = new RewardRedemptionRequest(eventId, body.attendeeUserId(), rewardId);
         return ResponseEntity.ok(ApiResponse.success("Reward redeemed", rewardService.redeem(normalized)));
     }
@@ -188,7 +206,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<PointBalanceResponse>> assignPoints(HttpServletRequest request,
                                                                           @PathVariable UUID eventId,
                                                                           @Valid @RequestBody PointAdjustmentRequest body) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Points assigned", rewardService.assignPoints(eventId, body.attendeeUserId(), body.points(), body.reason())));
     }
 
@@ -196,7 +214,7 @@ public class StaffController {
     public ResponseEntity<ApiResponse<PointBalanceResponse>> deductPoints(HttpServletRequest request,
                                                                           @PathVariable UUID eventId,
                                                                           @Valid @RequestBody PointAdjustmentRequest body) {
-        requireAssignment(request, eventId);
+        requireActiveAssignment(request, eventId);
         return ResponseEntity.ok(ApiResponse.success("Points deducted", rewardService.deductPoints(eventId, body.attendeeUserId(), body.points(), body.reason())));
     }
 
@@ -211,11 +229,19 @@ public class StaffController {
         return jwtService.extractUserIdFromBearer(request.getHeader("Authorization"));
     }
 
-    private void requireAssignment(HttpServletRequest request, UUID eventId) {
+    private EventStaffAssignment requireActiveAssignment(HttpServletRequest request, UUID eventId) {
         UUID staffUserId = currentUserId(request);
-        if (!eventStaffAssignmentRepository.existsByEventIdAndStaffUserId(eventId, staffUserId)
-                && jwtService.extractRoleFromBearer(request.getHeader("Authorization")) == AccountRole.STAFF) {
-            throw new com.thedavelopers.eventqr.shared.exception.ForbiddenException("Staff user is not assigned to this event");
+        if (jwtService.extractRoleFromBearer(request.getHeader("Authorization")) != AccountRole.STAFF) {
+            return null;
+        }
+        return eventStaffAssignmentRepository.findByEventIdAndStaffUserIdAndActiveTrue(eventId, staffUserId)
+                .orElseThrow(() -> new com.thedavelopers.eventqr.shared.exception.ForbiddenException("Staff user is not actively assigned to this event"));
+    }
+
+    private void requireScanPermission(HttpServletRequest request, UUID eventId) {
+        EventStaffAssignment assignment = requireActiveAssignment(request, eventId);
+        if (assignment != null && !assignment.isCanScan()) {
+            throw new com.thedavelopers.eventqr.shared.exception.ForbiddenException("Staff user is not allowed to scan for this event");
         }
     }
 }

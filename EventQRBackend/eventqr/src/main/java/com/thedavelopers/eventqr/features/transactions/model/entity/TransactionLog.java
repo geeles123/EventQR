@@ -51,6 +51,9 @@ public class TransactionLog extends BaseEntity {
     @Column(length = 2000)
     private String reason;
 
+    @Column(length = 4000)
+    private String metadata;
+
     @Column(nullable = false)
     private int pointsDelta;
 }
