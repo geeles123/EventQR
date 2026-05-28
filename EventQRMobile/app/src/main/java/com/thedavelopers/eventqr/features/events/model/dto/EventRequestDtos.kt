@@ -49,6 +49,7 @@ data class EventRequestResponse(
     val additionalNotes: String? = null,
     val reasonForRequest: String? = null,
     val status: EventRequestStatus,
+    val eventId: UUID? = null,
     val adminRemarks: String? = null,
     val reviewedByUserId: UUID? = null,
     val reviewedAt: Instant? = null,

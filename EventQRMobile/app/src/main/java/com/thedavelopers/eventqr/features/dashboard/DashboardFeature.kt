@@ -103,7 +103,7 @@ class DashboardPresenter(
                 val upcoming = if (eventsResult is NetworkResult.Success) {
                     val now = Instant.now()
                     eventsResult.data
-                        .filter { it.eventStartAt?.isAfter(now) == true }
+                        .filter { it.eventEndAt?.isBefore(now) != true }
                         .sortedBy { it.eventStartAt }
                         .take(2)
                         .map { event ->
@@ -113,7 +113,7 @@ class DashboardPresenter(
                                 location = event.location,
                                 category = event.category,
                                 eventStartAt = event.eventStartAt,
-                                status = "Upcoming",
+                                status = if (event.eventStartAt?.isAfter(now) == true) "Upcoming" else "Ongoing",
                                 description = event.description,
                                 eventEndAt = event.eventEndAt,
                                 capacity = event.capacity,
