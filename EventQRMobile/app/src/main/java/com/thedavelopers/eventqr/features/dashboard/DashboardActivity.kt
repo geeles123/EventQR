@@ -372,7 +372,8 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
                 startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.dashboard.OrganizerDashboardActivity::class.java))
             }
             "Admin Portal" -> {
-                Toast.makeText(this, "Admin Portal coming soon", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, com.thedavelopers.eventqr.features.admin.dashboard.AdminDashboardActivity::class.java))
+                finish()
             }
         }
     }

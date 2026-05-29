@@ -92,8 +92,10 @@ open class LandingActivity : AppCompatActivity() {
         val normalizedRole = RoleMapper.normalizeRole(role)
         val destination = when (normalizedRole) {
             AccountRole.STAFF.name -> com.thedavelopers.eventqr.features.staff.StaffDashboardActivity::class.java
-            AccountRole.ORGANIZER.name, AccountRole.ADMIN.name, AccountRole.SUPER_ADMIN.name ->
+            AccountRole.ORGANIZER.name ->
                 com.thedavelopers.eventqr.features.organizer.OrganizerDashboardActivity::class.java
+            AccountRole.ADMIN.name, AccountRole.SUPER_ADMIN.name ->
+                com.thedavelopers.eventqr.features.admin.dashboard.AdminDashboardActivity::class.java
             else -> DashboardActivity::class.java
         }
         startActivity(

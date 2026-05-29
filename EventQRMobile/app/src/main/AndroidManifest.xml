@@ -75,6 +75,10 @@
         <activity android:name=".features.organizer.AttendeeDetailsActivity" android:exported="false" />
         <activity android:name=".features.admin.AdminEventApprovalBackendActivity" android:exported="false" />
         <activity android:name=".features.admin.AdminEventRequestDetailActivity" android:exported="false" />
+        <activity android:name=".features.admin.dashboard.AdminDashboardActivity" android:exported="false" />
+        <activity android:name=".features.admin.users.AdminAccountManagementActivity" android:exported="false" />
+        <activity android:name=".features.admin.logs.AdminAuditLogsActivity" android:exported="false" />
+        <activity android:name=".features.admin.notifications.AdminNotificationManagementActivity" android:exported="false" />
         <activity android:name=".features.organizer.TransactionLogsActivity" android:exported="false" />
         <activity android:name=".features.organizer.EventReportsActivity" android:exported="false" />
         <activity

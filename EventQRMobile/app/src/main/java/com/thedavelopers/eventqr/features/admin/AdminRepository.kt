@@ -4,6 +4,8 @@ import android.content.Context
 import com.thedavelopers.eventqr.core.api.ApiClient
 import com.thedavelopers.eventqr.core.api.NetworkResult
 import com.thedavelopers.eventqr.core.api.safeApiCall
+import com.thedavelopers.eventqr.features.audit.model.dto.AuditLogResponse
+import com.thedavelopers.eventqr.features.events.model.dto.EventResponse
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequestDecisionRequest
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequestResponse
 import com.thedavelopers.eventqr.features.users.model.dto.UserResponse
@@ -18,6 +20,15 @@ class AdminRepository(private val context: Context) {
 
     suspend fun getEventRequest(requestId: String): NetworkResult<EventRequestResponse> =
         safeApiCall { apiService.getAdminEventRequest(requestId) }
+
+    suspend fun loadUsers(): NetworkResult<List<UserResponse>> =
+        safeApiCall { apiService.getUsers() }
+
+    suspend fun loadEvents(): NetworkResult<List<EventResponse>> =
+        safeApiCall { apiService.getEvents() }
+
+    suspend fun loadAuditLogs(): NetworkResult<List<AuditLogResponse>> =
+        safeApiCall { apiService.getAdminAuditLogs() }
 
     suspend fun approveEvent(eventId: String, remarks: String?): NetworkResult<EventRequestResponse> {
         return safeApiCall { apiService.approveEventRequest(eventId, EventRequestDecisionRequest(remarks)) }

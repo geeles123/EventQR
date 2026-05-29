@@ -82,7 +82,7 @@ open class LoginActivity : AppCompatActivity(), LoginContract.View {
             AccountRole.ORGANIZER.name ->
                 com.thedavelopers.eventqr.features.organizer.OrganizerDashboardActivity::class.java
             AccountRole.ADMIN.name, AccountRole.SUPER_ADMIN.name ->
-                com.thedavelopers.eventqr.features.admin.AdminEventApprovalBackendActivity::class.java
+                com.thedavelopers.eventqr.features.admin.dashboard.AdminDashboardActivity::class.java
             AccountRole.ATTENDEE.name, AccountRole.USER.name -> DashboardActivity::class.java
             "" -> {
                 showMessage("Unable to determine account role")

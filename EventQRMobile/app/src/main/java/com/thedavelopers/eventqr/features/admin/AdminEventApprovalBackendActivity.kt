@@ -17,8 +17,9 @@ import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.core.api.NetworkResult
 import com.thedavelopers.eventqr.core.api.dto.AccountRole
 import com.thedavelopers.eventqr.core.api.dto.EventRequestStatus
-import com.thedavelopers.eventqr.features.organizer.ManageUsersActivity
-import com.thedavelopers.eventqr.features.organizer.TransactionLogsActivity
+import com.thedavelopers.eventqr.features.admin.dashboard.AdminDashboardActivity
+import com.thedavelopers.eventqr.features.admin.logs.AdminAuditLogsActivity
+import com.thedavelopers.eventqr.features.admin.users.AdminAccountManagementActivity
 import kotlinx.coroutines.launch
 
 class AdminEventApprovalBackendActivity : AppCompatActivity() {
@@ -92,7 +93,7 @@ class AdminEventApprovalBackendActivity : AppCompatActivity() {
 
     private fun bindNavigation() {
         navDashboard.setOnClickListener {
-            startActivity(Intent(this, com.thedavelopers.eventqr.features.dashboard.DashboardActivity::class.java))
+            startActivity(Intent(this, AdminDashboardActivity::class.java))
             finish()
         }
 
@@ -101,11 +102,13 @@ class AdminEventApprovalBackendActivity : AppCompatActivity() {
         }
 
         navAccounts.setOnClickListener {
-            startActivity(Intent(this, ManageUsersActivity::class.java))
+            startActivity(Intent(this, AdminAccountManagementActivity::class.java))
+            finish()
         }
 
         navLogs.setOnClickListener {
-            startActivity(Intent(this, TransactionLogsActivity::class.java))
+            startActivity(Intent(this, AdminAuditLogsActivity::class.java))
+            finish()
         }
     }
 

@@ -168,7 +168,8 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
                 // Already here
             }
             "Admin Portal" -> {
-                Toast.makeText(this, "Admin Portal coming soon", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, com.thedavelopers.eventqr.features.admin.dashboard.AdminDashboardActivity::class.java))
+                finish()
             }
         }
     }
