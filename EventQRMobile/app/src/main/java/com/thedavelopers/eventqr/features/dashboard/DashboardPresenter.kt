@@ -1,11 +1,11 @@
 package com.thedavelopers.eventqr.features.dashboard
 
 import com.thedavelopers.eventqr.core.api.NetworkResult
+import com.thedavelopers.eventqr.core.api.dto.RegistrationStatus
 import com.thedavelopers.eventqr.core.session.SessionManager
 import com.thedavelopers.eventqr.features.attendee.AttendeeRepository
-import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardSummary
 import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardUpcomingEvent
-import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse
+import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
@@ -32,64 +32,79 @@ class DashboardPresenter(
     fun loadDashboard() {
         view?.updateHeader(sessionManager.getUserRole(), sessionManager.getFullName())
         view?.showLoading(true)
-        view?.showTransactionHistoryLoading(true)
         dashboardJob = MainScope().launch {
             val summaryDeferred = async { repository.getSummary() }
             val eventsDeferred = async { attendeeRepository.getEvents() }
-            val transactionsDeferred = async { attendeeRepository.getMyTransactions() }
+            val registrationsDeferred = async { attendeeRepository.getMyRegistrations() }
 
             val summaryResult = summaryDeferred.await()
             val eventsResult = eventsDeferred.await()
-            val transactionsResult = transactionsDeferred.await()
+            val registrationsResult = registrationsDeferred.await()
 
             view?.showLoading(false)
 
             if (summaryResult is NetworkResult.Success) {
-                var summary = summaryResult.data
+                val now = Instant.now()
+                val events = if (eventsResult is NetworkResult.Success) eventsResult.data else emptyList()
+                val registrations = if (registrationsResult is NetworkResult.Success) registrationsResult.data else emptyList()
 
-                val upcoming = if (eventsResult is NetworkResult.Success) {
-                    val now = Instant.now()
-                    eventsResult.data
-                        .filter { it.eventEndAt?.isBefore(now) != true }
-                        .sortedBy { it.eventStartAt }
-                        .take(2)
-                        .map { event ->
-                            DashboardUpcomingEvent(
-                                eventId = event.eventId,
-                                title = event.title,
-                                location = event.location,
-                                category = event.category,
-                                eventStartAt = event.eventStartAt,
-                                status = if (event.eventStartAt?.isAfter(now) == true) "Upcoming" else "Ongoing",
-                                description = event.description,
-                                eventEndAt = event.eventEndAt,
-                                capacity = event.capacity,
-                                currentAttendeeCount = event.currentAttendeeCount
-                            )
-                        }
+                val registeredEventIds = registrations
+                    .filter { it.status != RegistrationStatus.CANCELLED && it.status != RegistrationStatus.NO_SHOW }
+                    .map { it.eventId }
+                    .toSet()
+
+                val mappedEvents = events
+                    .filter { it.eventEndAt?.isBefore(now) != true }
+                    .sortedWith(compareBy<AttendeeEventResponse> { it.eventStartAt ?: Instant.MAX })
+                    .map { event ->
+                        val status = computeEventStatus(event, now)
+                        DashboardUpcomingEvent(
+                            eventId = event.eventId,
+                            title = event.title,
+                            location = event.location,
+                            category = event.category,
+                            eventStartAt = event.eventStartAt,
+                            status = status,
+                            description = event.description,
+                            eventEndAt = event.eventEndAt,
+                            capacity = event.capacity,
+                            currentAttendeeCount = event.currentAttendeeCount,
+                            isRegistered = registeredEventIds.contains(event.eventId),
+                        )
+                    }
+
+                val registeredCount = if (registrationsResult is NetworkResult.Success) {
+                    registeredEventIds.size
                 } else {
-                    emptyList()
+                    summaryResult.data.totalRegistrations.toInt()
                 }
 
-                summary = summary.copy(upcomingEvents = upcoming)
+                val upcomingCount = if (registrationsResult is NetworkResult.Success) {
+                    registrations.count {
+                        it.status != RegistrationStatus.CANCELLED &&
+                            it.status != RegistrationStatus.NO_SHOW &&
+                            it.eventStartAt?.isAfter(now) == true
+                    }
+                } else {
+                    mappedEvents.count { it.status == "Upcoming" }
+                }
+
+                val summary = summaryResult.data.copy(
+                    totalRegistrations = registeredCount.toLong(),
+                    totalEvents = upcomingCount.toLong(),
+                    upcomingEvents = mappedEvents.take(3),
+                    discoverEvents = mappedEvents.take(5),
+                )
                 view?.showSummary(summary)
 
                 if (eventsResult is NetworkResult.Error) {
-                    view?.showMessage("Unable to load upcoming events: ${eventsResult.message}")
+                    view?.showMessage("Unable to load events: ${eventsResult.message}")
+                }
+                if (registrationsResult is NetworkResult.Error) {
+                    view?.showMessage("Unable to load registrations: ${registrationsResult.message}")
                 }
             } else if (summaryResult is NetworkResult.Error) {
                 view?.showError(summaryResult.message)
-            }
-
-            when (transactionsResult) {
-                is NetworkResult.Success -> {
-                    val recentTransactions = transactionsResult.data
-                        .sortedByDescending { it.scannedAt ?: Instant.EPOCH }
-                        .take(3)
-                    view?.showTransactionHistory(recentTransactions)
-                }
-                is NetworkResult.Error -> view?.showTransactionHistoryError(transactionsResult.message)
-                NetworkResult.Loading -> Unit
             }
         }
     }
@@ -100,5 +115,15 @@ class DashboardPresenter(
 
     fun logout() {
         sessionManager.clearSession()
+    }
+
+    private fun computeEventStatus(event: AttendeeEventResponse, now: Instant): String {
+        val ended = event.eventEndAt?.isBefore(now) == true
+        val upcoming = event.eventStartAt?.isAfter(now) == true
+        return when {
+            ended -> "Completed"
+            upcoming -> "Upcoming"
+            else -> "Active"
+        }
     }
 }

@@ -16,7 +16,6 @@ import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
 import com.thedavelopers.eventqr.features.events.model.dto.EventAvailabilityResponse
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 
 open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
@@ -25,11 +24,6 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
     private lateinit var eventId: String
     private var currentEvent: AttendeeEventResponse? = null
     private var isAlreadyRegistered = false
-
-    private val manilaZoneId: ZoneId = ZoneId.of("Asia/Manila")
-    private val manilaDateTimeFormatter: DateTimeFormatter = DateTimeFormatter
-        .ofPattern("MMM d, yyyy • h:mm a")
-        .withZone(manilaZoneId)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,9 +39,13 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
         findViewById<TextView>(R.id.txtDetailDescription).text = intent.getStringExtra(EXTRA_EVENT_DESCRIPTION).orEmpty()
         findViewById<TextView>(R.id.txtDetailVenue).text = intent.getStringExtra(EXTRA_EVENT_LOCATION).orEmpty().ifBlank { "Location not specified" }
         findViewById<TextView>(R.id.txtTagCategory).text = intent.getStringExtra(EXTRA_EVENT_CATEGORY).orEmpty().ifBlank { "Technology" }
-        findViewById<TextView>(R.id.txtDetailStart).text = intent.getStringExtra(EXTRA_EVENT_START).orEmpty()
-        findViewById<TextView>(R.id.txtDetailStatus).text = intent.getStringExtra(EXTRA_EVENT_STATUS).orEmpty()
-        findViewById<TextView>(R.id.txtDetailCapacity).text = "${intent.getStringExtra(EXTRA_EVENT_COUNT).orEmpty()} / ${intent.getStringExtra(EXTRA_EVENT_CAPACITY).orEmpty()} Registered"
+        
+        // Initial binding from intent extras if available
+        intent.getStringExtra(EXTRA_EVENT_COUNT)?.let { countStr ->
+            intent.getStringExtra(EXTRA_EVENT_CAPACITY)?.let { capacityStr ->
+                updateRegistrationStatusUI(countStr.toIntOrNull() ?: 0, capacityStr.toIntOrNull() ?: 0)
+            }
+        }
 
         findViewById<Button>(R.id.btnRegisterForEvent).apply {
             isEnabled = false
@@ -82,22 +80,63 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
         findViewById<TextView>(R.id.txtDetailDescription).text = event.description?.takeIf { it.isNotBlank() } ?: "No event description provided."
         findViewById<TextView>(R.id.txtDetailVenue).text = event.location?.takeIf { it.isNotBlank() } ?: "Location not specified."
 
-        val startStr = formatInstantManila(event.eventStartAt)
-        val endStr = if (event.eventEndAt != null) " - ${formatInstantManila(event.eventEndAt)}" else ""
-        findViewById<TextView>(R.id.txtDetailStart).text = if (event.eventStartAt != null) "$startStr$endStr" else "Date and time not specified."
-
-        findViewById<TextView>(R.id.txtDetailCapacity).text = "${event.currentAttendeeCount} / ${event.capacity} Registered"
-
-        if (!event.category.isNullOrBlank()) {
-            findViewById<View>(R.id.layoutDetailCategory)?.visibility = View.VISIBLE
-            findViewById<TextView>(R.id.txtTagCategory).text = event.category
-        } else {
-            findViewById<View>(R.id.layoutDetailCategory)?.visibility = View.GONE
+        // Date & Time
+        val manilaZone = java.time.ZoneId.of("Asia/Manila")
+        val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", java.util.Locale.ENGLISH).withZone(manilaZone)
+        val timeFormatter = java.time.format.DateTimeFormatter.ofPattern("hh:mm a", java.util.Locale.ENGLISH).withZone(manilaZone)
+        
+        event.eventStartAt?.let {
+            findViewById<TextView>(R.id.txtDetailDate).text = dateFormatter.format(it)
+            findViewById<TextView>(R.id.txtDetailTime).text = timeFormatter.format(it)
         }
 
-        findViewById<View>(R.id.layoutDetailRewards)?.visibility = if (event.rewardsEnabled) View.VISIBLE else View.GONE
+        updateRegistrationStatusUI(event.currentAttendeeCount, event.capacity)
+
+        if (!event.category.isNullOrBlank()) {
+            findViewById<TextView>(R.id.txtTagCategory).visibility = View.VISIBLE
+            findViewById<TextView>(R.id.txtTagCategory).text = event.category
+        } else {
+            findViewById<TextView>(R.id.txtTagCategory).text = "Event"
+        }
+
+        // Rewards row inside info card
+        val rewardsRow = findViewById<View>(R.id.layoutRewardsRow)
+        val rewardsDivider = findViewById<View>(R.id.viewRewardsDivider)
+        if (event.rewardsEnabled) {
+            rewardsRow?.visibility = View.VISIBLE
+            rewardsDivider?.visibility = View.VISIBLE
+        } else {
+            rewardsRow?.visibility = View.GONE
+            rewardsDivider?.visibility = View.GONE
+        }
+
+        // Hide old separate rewards layout just in case
+        findViewById<View>(R.id.layoutDetailRewards)?.visibility = View.GONE
+
+        // Status Label
+        val now = Instant.now()
+        val statusText = when {
+            event.eventEndAt?.isBefore(now) == true -> "Completed"
+            event.eventStartAt?.isAfter(now) == true -> "Upcoming"
+            event.eventStartAt != null && event.eventEndAt != null &&
+                !event.eventStartAt.isAfter(now) && !event.eventEndAt.isBefore(now) -> "Active"
+            else -> "Scheduled"
+        }
+        findViewById<TextView>(R.id.txtDetailStatus).text = statusText
 
         loadEventAvailability(event)
+    }
+
+    private fun updateRegistrationStatusUI(current: Int, capacity: Int) {
+        findViewById<TextView>(R.id.txtDetailCapacity).text = "$current / $capacity registered"
+        
+        val cap = capacity.coerceAtLeast(1)
+        val percent = (current.toFloat() / cap.toFloat() * 100).toInt().coerceIn(0, 100)
+        val remaining = (capacity - current).coerceAtLeast(0)
+        
+        findViewById<TextView>(R.id.txtRegPercent).text = "$percent% full"
+        findViewById<android.widget.ProgressBar>(R.id.pbRegistrationDetail).progress = percent
+        findViewById<TextView>(R.id.txtRemainingSpots).text = "$remaining spots remaining"
     }
 
     private fun loadEventAvailability(event: AttendeeEventResponse) {
@@ -117,6 +156,23 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
 
     private fun updateRegisterButtonFromAvailability(event: AttendeeEventResponse, availability: EventAvailabilityResponse) {
         val btn = findViewById<Button>(R.id.btnRegisterForEvent)
+        val statusView = findViewById<TextView>(R.id.txtDetailStatus)
+
+        // Refine status based on availability
+        val now = Instant.now()
+        val isPast = event.eventEndAt?.isBefore(now) == true
+        val isOngoing = !isPast && event.eventStartAt != null && event.eventEndAt != null &&
+                !event.eventStartAt.isAfter(now) && !event.eventEndAt.isBefore(now)
+
+        if (isPast) {
+            statusView.text = "Completed"
+        } else if (isOngoing) {
+            statusView.text = "Active"
+        } else if (!availability.registrationOpen || availability.full) {
+            statusView.text = "Registration Closed"
+        } else {
+            statusView.text = "Upcoming"
+        }
 
         if (isAlreadyRegistered) {
             setAlreadyRegisteredState(btn)
@@ -127,7 +183,7 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
         if (availability.available) {
             btn.isEnabled = true
             btn.text = "Register"
-            btn.setBackgroundResource(R.drawable.bg_eventqr_gradient)
+            btn.setBackgroundResource(R.drawable.bg_detail_register_button)
             logRegistrationWindow(event, availability, availability.message, true)
             return
         }
@@ -149,7 +205,7 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
 
         btn.isEnabled = true
         btn.text = "Register"
-        btn.setBackgroundResource(R.drawable.bg_eventqr_gradient)
+        btn.setBackgroundResource(R.drawable.bg_detail_register_button)
         logRegistrationWindow(event, null, "Availability endpoint failed: $message", true)
     }
 
@@ -189,10 +245,6 @@ open class EventDetailActivity : AppCompatActivity(), EventDetailContract.View {
         button.isEnabled = false
         button.text = "Already Registered"
         button.setBackgroundResource(R.drawable.bg_disabled_button)
-    }
-
-    private fun formatInstantManila(value: Instant?): String {
-        return if (value == null) "-" else manilaDateTimeFormatter.format(value)
     }
 
     private fun logRegistrationWindow(

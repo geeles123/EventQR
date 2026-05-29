@@ -2,39 +2,42 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/eventqr_bg"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="171dp"
+        android:layout_height="wrap_content"
         android:background="@drawable/bg_eventqr_gradient"
         android:orientation="vertical"
-        android:paddingHorizontal="17dp"
-        android:paddingTop="27dp">
+        android:paddingHorizontal="16dp"
+        android:paddingTop="22dp"
+        android:paddingBottom="18dp">
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="56dp"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/txtDashboardWelcome"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Welcome back!"
+                    android:text="Welcome back,"
                     android:textColor="#FFFFFF"
-                    android:textSize="21sp"
+                    android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="7dp"
+                    android:layout_marginTop="8dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -43,10 +46,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
-                        android:maxWidth="200dp"
                         android:maxLines="1"
-                        android:text="Dharell Dave"
-                        android:textColor="#FFFFFF"
+                        android:maxWidth="190dp"
+                        android:text="Attendee"
+                        android:textColor="#DBEAFE"
                         android:textSize="14sp" />
 
                     <TextView
@@ -54,7 +57,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text=" · "
-                        android:textColor="#FFFFFF"
+                        android:textColor="#DBEAFE"
                         android:textSize="14sp"
                         android:visibility="gone" />
 
@@ -62,7 +65,7 @@
                         android:id="@+id/portalSwitcherChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="6dp"
                         android:background="@drawable/bg_portal_chip"
                         android:clickable="true"
                         android:focusable="true"
@@ -93,33 +96,35 @@
             </LinearLayout>
 
             <FrameLayout
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-                android:layout_gravity="top|end">
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/bg_header_icon_circle">
 
                 <ImageView
                     android:id="@+id/btnDashboardNotifications"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
                     android:layout_gravity="center"
                     android:contentDescription="Notifications"
                     android:src="@drawable/notification_bell"
                     android:tint="#FFFFFF" />
 
                 <View
-                    android:layout_width="7dp"
-                    android:layout_height="7dp"
+                    android:id="@+id/viewNotificationDot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
                     android:layout_gravity="top|end"
-                    android:layout_marginTop="3dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/bg_circle_blue" />
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="5dp"
+                    android:background="@drawable/bg_red_dot"
+                    android:visibility="gone" />
             </FrameLayout>
         </FrameLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="59dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="76dp"
             android:orientation="horizontal">
 
             <LinearLayout
@@ -127,79 +132,85 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/bg_stat_card"
-                android:gravity="center"
-                android:orientation="vertical">
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingHorizontal="14dp">
 
                 <TextView
-                    android:id="@+id/txtTotalRegistrations"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textColor="#FFFFFF"
-                    android:textSize="24sp"
+                    android:text="My Points"
+                    android:textColor="#D1D5DB"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Registrations"
-                    android:textColor="#FFFFFF"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_stat_card"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/txtTotalEvents"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textColor="#FFFFFF"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Events"
-                    android:textColor="#FFFFFF"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_stat_card"
-                android:gravity="center"
-                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/txtTotalRewards"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:text="0"
-                    android:textColor="#FFFFFF"
-                    android:textSize="24sp"
+                    android:textColor="#22D3EE"
+                    android:textSize="20sp"
                     android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_stat_card"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingHorizontal="14dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Points"
-                    android:textColor="#FFFFFF"
-                    android:textSize="11sp" />
+                    android:text="Registered"
+                    android:textColor="#D1D5DB"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtTotalRegistrations"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="0"
+                    android:textColor="#34D399"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_stat_card"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingHorizontal="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Upcoming"
+                    android:textColor="#D1D5DB"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtTotalEvents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="0"
+                    android:textColor="#FBBF24"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -213,127 +224,186 @@
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="false">
+            android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="17dp"
-                android:paddingTop="30dp"
-                android:paddingBottom="40dp">
+                android:paddingHorizontal="14dp"
+                android:paddingTop="18dp"
+                android:paddingBottom="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quick Actions"
+                    android:textColor="#111827"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="286dp"
-                    android:background="@drawable/bg_card"
-                    android:elevation="6dp"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="18dp"
-                    android:paddingTop="22dp"
-                    android:paddingBottom="18dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Quick Actions"
-                        android:textColor="#000000"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="84dp"
-                        android:layout_marginTop="24dp"
-                        android:orientation="horizontal">
+                        android:id="@+id/btnAttendeeHub"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_quick_action_button"
+                        android:clickable="true"
+                        android:elevation="2dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="10dp">
 
-                        <Button
-                            android:id="@+id/btnAttendeeHub"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_quick_action_button"
-                            android:drawableTop="@drawable/ic_action_search"
-                            android:drawablePadding="9dp"
-                            android:drawableTint="#000000"
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_quick_action_icon_purple">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_nav_calendar"
+                                android:tint="#4F46E5" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:minHeight="0dp"
-                            android:paddingTop="10dp"
-                            android:paddingBottom="10dp"
+                            android:maxLines="2"
                             android:text="Browse Events"
-                            android:textAllCaps="false"
-                            android:textColor="#000000"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <Button
-                            android:id="@+id/btnStaffHub"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="30dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_quick_action_button"
-                            android:drawableTop="@drawable/ic_nav_calendar"
-                            android:drawablePadding="9dp"
-                            android:drawableTint="#000000"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:minHeight="0dp"
-                            android:paddingTop="10dp"
-                            android:paddingBottom="10dp"
-                            android:text="My Events"
-                            android:textAllCaps="false"
-                            android:textColor="#000000"
-                            android:textSize="13sp"
+                            android:textColor="#111827"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="84dp"
-                        android:layout_marginTop="22dp"
-                        android:orientation="horizontal">
+                        android:id="@+id/btnStaffHub"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_quick_action_button"
+                        android:clickable="true"
+                        android:elevation="2dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="10dp">
 
-                        <Button
-                            android:id="@+id/btnTransactionHistory"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_quick_action_button"
-                            android:drawableTop="@drawable/ic_file"
-                            android:drawablePadding="9dp"
-                            android:drawableTint="#000000"
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_quick_action_icon_indigo">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_qr_scan"
+                                android:tint="#6366F1" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:minHeight="0dp"
-                            android:paddingTop="10dp"
-                            android:paddingBottom="10dp"
-                            android:text="Transaction History"
-                            android:textAllCaps="false"
-                            android:textColor="#000000"
-                            android:textSize="13sp"
+                            android:maxLines="2"
+                            android:text="My Registered Events"
+                            android:textColor="#111827"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
+                    </LinearLayout>
 
-                        <Button
-                            android:id="@+id/btnNotificationsHub"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="30dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_quick_action_button"
-                            android:drawableTop="@drawable/ic_action_request"
-                            android:drawablePadding="9dp"
-                            android:drawableTint="#000000"
+                    <LinearLayout
+                        android:id="@+id/btnTransactionHistory"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_quick_action_button"
+                        android:clickable="true"
+                        android:elevation="2dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="10dp">
+
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_quick_action_icon_cyan">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_file"
+                                android:tint="#06B6D4" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:minHeight="0dp"
-                            android:paddingTop="10dp"
-                            android:paddingBottom="10dp"
+                            android:maxLines="2"
+                            android:text="History"
+                            android:textColor="#111827"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/btnNotificationsHub"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_quick_action_button"
+                        android:clickable="true"
+                        android:elevation="2dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="10dp">
+
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_quick_action_icon_green">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_fileedit"
+                                android:tint="#10B981" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center"
+                            android:maxLines="2"
                             android:text="Request Event"
-                            android:textAllCaps="false"
-                            android:textColor="#000000"
-                            android:textSize="13sp"
+                            android:textColor="#111827"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
@@ -342,13 +412,8 @@
                     android:id="@+id/layoutUpcomingEvents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
-                    android:background="@drawable/bg_card"
-                    android:elevation="5dp"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="14dp"
-                    android:paddingTop="20dp"
-                    android:paddingBottom="16dp">
+                    android:layout_marginTop="20dp"
+                    android:orientation="vertical">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -361,7 +426,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Upcoming Events"
-                            android:textColor="#000000"
+                            android:textColor="#111827"
                             android:textSize="20sp"
                             android:textStyle="bold" />
 
@@ -369,26 +434,21 @@
                             android:id="@+id/txtUpcomingEventsViewAll"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:text="View All"
-                            android:textColor="#000000"
+                            android:textColor="#4F46E5"
                             android:textSize="14sp"
-                            android:textStyle="bold" 
-                            android:clickable="true"/>
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/layoutRecentActivity"
+                    android:id="@+id/layoutDiscoverEvents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="23dp"
-                    android:background="@drawable/bg_card"
-                    android:elevation="4dp"
-                    android:minHeight="112dp"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="20dp"
-                    android:paddingTop="21dp"
-                    android:paddingBottom="16dp">
+                    android:layout_marginTop="18dp"
+                    android:orientation="vertical">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -400,20 +460,21 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Transaction History"
-                            android:textColor="#000000"
-                            android:textSize="22sp"
+                            android:text="Discover Events"
+                            android:textColor="#111827"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id="@+id/txtTransactionHistoryViewAll"
+                            android:id="@+id/txtDiscoverEventsSeeAll"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="View All"
-                            android:textColor="#000000"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:text="See All"
+                            android:textColor="#4F46E5"
                             android:textSize="14sp"
-                            android:textStyle="bold" 
-                            android:clickable="true"/>
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -421,7 +482,7 @@
                     android:id="@+id/txtDashboardLoading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="14dp"
                     android:gravity="center"
                     android:text="Loading dashboard..."
                     android:textColor="@color/eventqr_muted"
@@ -429,36 +490,6 @@
             </LinearLayout>
         </ScrollView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <TextView
-        android:id="@+id/txtTotalTransactions"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/txtTotalNotifications"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/btnRewardsHub"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/btnReportsHub"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/btnLogout"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"

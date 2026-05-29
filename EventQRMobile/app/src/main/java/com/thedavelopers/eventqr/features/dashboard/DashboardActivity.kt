@@ -1,16 +1,16 @@
 package com.thedavelopers.eventqr.features.dashboard
 
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -34,7 +34,12 @@ import com.thedavelopers.eventqr.features.attendee.EXTRA_EVENT_START
 import com.thedavelopers.eventqr.features.attendee.EXTRA_EVENT_STATUS
 import com.thedavelopers.eventqr.features.attendee.EXTRA_EVENT_TITLE
 import com.thedavelopers.eventqr.features.attendee.configureAttendeeBottomNav
-import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse
+import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardSummary
+import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardUpcomingEvent
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     private lateinit var presenter: DashboardPresenter
@@ -43,22 +48,18 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     private lateinit var nameText: TextView
     private lateinit var summaryEvents: TextView
     private lateinit var summaryRegistrations: TextView
-    private lateinit var summaryTransactions: TextView
     private lateinit var summaryRewards: TextView
-    private lateinit var summaryNotifications: TextView
     private lateinit var loadingText: TextView
-    private lateinit var attendeeCard: Button
-    private lateinit var staffCard: Button
-    private lateinit var organizerCard: Button
-    private lateinit var notificationsCard: Button
-    private lateinit var rewardsCard: Button
-    private lateinit var reportsCard: Button
-    private lateinit var logoutCard: Button
+    private lateinit var attendeeCard: View
+    private lateinit var staffCard: View
+    private lateinit var organizerCard: View
+    private lateinit var notificationsCard: View
     private lateinit var notificationBell: ImageView
+    private lateinit var notificationDot: View
     private lateinit var upcomingEventsLayout: LinearLayout
-    private lateinit var recentActivityLayout: LinearLayout
+    private lateinit var discoverEventsLayout: LinearLayout
     private lateinit var upcomingEventsViewAll: TextView
-    private lateinit var transactionHistoryViewAll: TextView
+    private lateinit var discoverEventsSeeAll: TextView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private var isSwipeRefreshing = false
 
@@ -72,7 +73,7 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
             this,
             DashboardRepository(this),
             AttendeeRepository(this),
-            sessionManager
+            sessionManager,
         )
         presenter.attach(this)
 
@@ -80,42 +81,38 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
         nameText = findViewById(R.id.txtDashboardName)
         summaryEvents = findViewById(R.id.txtTotalEvents)
         summaryRegistrations = findViewById(R.id.txtTotalRegistrations)
-        summaryTransactions = findViewById(R.id.txtTotalTransactions)
         summaryRewards = findViewById(R.id.txtTotalRewards)
-        summaryNotifications = findViewById(R.id.txtTotalNotifications)
         loadingText = findViewById(R.id.txtDashboardLoading)
         attendeeCard = findViewById(R.id.btnAttendeeHub)
         staffCard = findViewById(R.id.btnStaffHub)
         organizerCard = findViewById(R.id.btnTransactionHistory)
         notificationsCard = findViewById(R.id.btnNotificationsHub)
-        rewardsCard = findViewById(R.id.btnRewardsHub)
-        reportsCard = findViewById(R.id.btnReportsHub)
-        logoutCard = findViewById(R.id.btnLogout)
         notificationBell = findViewById(R.id.btnDashboardNotifications)
+        notificationDot = findViewById(R.id.viewNotificationDot)
         upcomingEventsLayout = findViewById(R.id.layoutUpcomingEvents)
-        recentActivityLayout = findViewById(R.id.layoutRecentActivity)
+        discoverEventsLayout = findViewById(R.id.layoutDiscoverEvents)
         upcomingEventsViewAll = findViewById(R.id.txtUpcomingEventsViewAll)
-        transactionHistoryViewAll = findViewById(R.id.txtTransactionHistoryViewAll)
+        discoverEventsSeeAll = findViewById(R.id.txtDiscoverEventsSeeAll)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshDashboard)
+
         swipeRefreshLayout.setColorSchemeResources(R.color.eventqr_purple)
         swipeRefreshLayout.setOnRefreshListener {
             isSwipeRefreshing = true
             presenter.loadDashboard()
         }
+
         notificationBell.setOnClickListener {
             startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeNotificationsActivity::class.java))
         }
         upcomingEventsViewAll.setOnClickListener {
             startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeEventsActivity::class.java))
         }
-        transactionHistoryViewAll.setOnClickListener {
-            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeTransactionsActivity::class.java))
+        discoverEventsSeeAll.setOnClickListener {
+            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeEventsActivity::class.java))
         }
 
         setupPortalSwitcher()
-
-        configureActions(sessionManager.getUserRole())
-
+        configureActions()
         presenter.loadDashboard()
     }
 
@@ -132,50 +129,26 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
             loadingText.visibility = View.GONE
             return
         }
+
         loadingText.text = "Loading dashboard..."
         loadingText.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-    override fun showSummary(summary: com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardSummary) {
+    override fun showSummary(summary: DashboardSummary) {
         stopSwipeRefresh()
         loadingText.visibility = View.GONE
+
         nameText.text = summary.fullName?.takeIf { it.isNotBlank() }
             ?: sessionManager.getFullName()?.takeIf { it.isNotBlank() }
             ?: "Attendee"
+
         summaryEvents.text = summary.totalEvents.toString()
         summaryRegistrations.text = summary.totalRegistrations.toString()
-        summaryTransactions.text = summary.totalTransactions.toString()
         summaryRewards.text = summary.totalRewards.toString()
-        summaryNotifications.text = summary.totalNotifications.toString()
+        notificationDot.visibility = if (summary.totalNotifications > 0) View.VISIBLE else View.GONE
+
         renderUpcomingEvents(summary.upcomingEvents.orEmpty())
-    }
-
-    override fun showTransactionHistoryLoading(isLoading: Boolean) {
-        if (isSwipeRefreshing && isLoading) {
-            return
-        }
-        renderRecentActivityState(if (isLoading) "Loading transactions..." else null, 0xFF6B7280.toInt())
-    }
-
-    override fun showTransactionHistory(items: List<TransactionResponse>) {
-        stopSwipeRefresh()
-        while (recentActivityLayout.childCount > 1) {
-            recentActivityLayout.removeViewAt(1)
-        }
-
-        if (items.isEmpty()) {
-            renderRecentActivityState("No transactions yet.", 0xFF6B7280.toInt())
-            return
-        }
-
-        items.take(3).forEach { item ->
-            recentActivityLayout.addView(createTransactionPreviewRow(item))
-        }
-    }
-
-    override fun showTransactionHistoryError(message: String) {
-        stopSwipeRefresh()
-        renderRecentActivityState(message.ifBlank { "Unable to load transaction history." }, 0xFFB91C1C.toInt())
+        renderDiscoverEvents(summary.discoverEvents.orEmpty())
     }
 
     override fun showError(message: String) {
@@ -183,6 +156,7 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
         loadingText.text = message
         loadingText.visibility = View.VISIBLE
         renderUpcomingEvents(emptyList())
+        renderDiscoverEvents(emptyList())
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
@@ -195,120 +169,269 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     }
 
     override fun updateHeader(role: String?, name: String?) {
-        welcomeText.text = "Welcome back!"
+        welcomeText.text = "Welcome back,"
         nameText.text = name?.takeIf { it.isNotBlank() } ?: "Attendee"
     }
 
-    private fun renderUpcomingEvents(events: List<com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardUpcomingEvent>?) {
+    private fun renderUpcomingEvents(events: List<DashboardUpcomingEvent>) {
         while (upcomingEventsLayout.childCount > 1) {
             upcomingEventsLayout.removeViewAt(1)
         }
-        if (events.isNullOrEmpty()) {
-            upcomingEventsLayout.addView(createUpcomingEmptyState())
+
+        if (events.isEmpty()) {
+            upcomingEventsLayout.addView(createEmptyStateView("No upcoming events yet."))
             return
         }
+
         events.forEachIndexed { index, event ->
             upcomingEventsLayout.addView(createUpcomingEventRow(event, index == 0))
         }
     }
 
-    private fun createUpcomingEventRow(event: com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardUpcomingEvent, isFirst: Boolean): View {
+    private fun renderDiscoverEvents(events: List<DashboardUpcomingEvent>) {
+        while (discoverEventsLayout.childCount > 1) {
+            discoverEventsLayout.removeViewAt(1)
+        }
+
+        if (events.isEmpty()) {
+            discoverEventsLayout.addView(createEmptyStateView("No discoverable events right now."))
+            return
+        }
+
+        events.forEachIndexed { index, event ->
+            discoverEventsLayout.addView(createDiscoverEventCard(event, index == 0))
+        }
+    }
+
+    private fun createUpcomingEventRow(event: DashboardUpcomingEvent, isFirst: Boolean): View {
         val row = LinearLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(78),
+                ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = if (isFirst) dp(23) else dp(10)
+                topMargin = if (isFirst) dp(14) else dp(10)
             }
-            setBackgroundResource(R.drawable.bg_soft_gray_pill)
-            gravity = Gravity.CENTER_VERTICAL
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(11), 0, dp(11), 0)
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundResource(R.drawable.bg_card)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
             isClickable = true
             isFocusable = true
-            setOnClickListener {
-                val intent = Intent(this@DashboardActivity, com.thedavelopers.eventqr.features.attendee.EventDetailActivity::class.java).apply {
-                    putExtra(EXTRA_EVENT_ID, event.eventId.toString())
-                    putExtra(EXTRA_EVENT_TITLE, event.title)
-                    putExtra(EXTRA_EVENT_LOCATION, event.location ?: "")
-                    putExtra(EXTRA_EVENT_DESCRIPTION, event.description ?: "")
-                    putExtra(EXTRA_EVENT_CATEGORY, event.category ?: "")
-                    putExtra(EXTRA_EVENT_START, DateFormatters.formatInstant(event.eventStartAt))
-                    putExtra(EXTRA_EVENT_END, DateFormatters.formatInstant(event.eventEndAt))
-                    putExtra(EXTRA_EVENT_STATUS, event.status ?: "Upcoming")
-                    putExtra(EXTRA_EVENT_CAPACITY, event.capacity.toString())
-                    putExtra(EXTRA_EVENT_COUNT, event.currentAttendeeCount.toString())
-                }
-                startActivity(intent)
-            }
+            setOnClickListener { openEventDetail(event) }
         }
 
-        row.addView(TextView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(78), dp(56))
-            setBackgroundResource(R.drawable.bg_white_pill_button)
-            gravity = Gravity.CENTER
-            text = "▣"
-            setTextColor(0xFF111111.toInt())
-            textSize = 22f
+        row.addView(FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
+            setBackgroundResource(R.drawable.bg_event_date_upcoming)
+            addView(ImageView(context).apply {
+                layoutParams = FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER)
+                setImageResource(R.drawable.ic_qr_scan)
+                setColorFilter(0xFF4F46E5.toInt())
+            })
         })
 
         val textColumn = LinearLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(15)
+                marginStart = dp(12)
+                marginEnd = dp(8)
             }
             orientation = LinearLayout.VERTICAL
         }
+
         textColumn.addView(TextView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            )
             text = event.title.ifBlank { "Untitled event" }
-            setTextColor(0xFF000000.toInt())
-            textSize = 14f
+            setTextColor(0xFF111827.toInt())
+            textSize = 18f
             typeface = Typeface.DEFAULT_BOLD
+            maxLines = 1
         })
+
         textColumn.addView(TextView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = dp(8)
+                topMargin = dp(4)
             }
             text = DateFormatters.formatInstant(event.eventStartAt)
             setTextColor(0xFF6B7280.toInt())
-            textSize = 11f
-        })
-        textColumn.addView(TextView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                topMargin = dp(8)
-            }
-            text = event.location?.takeIf { it.isNotBlank() } ?: "Upcoming"
-            setTextColor(0xFF000000.toInt())
-            textSize = 11f
-            typeface = Typeface.DEFAULT_BOLD
+            textSize = 13f
         })
         row.addView(textColumn)
+
+        val badgeLabel = if (event.isRegistered) "Registered" else (event.status ?: "Upcoming")
+        val badge = TextView(this).apply {
+            text = badgeLabel
+            setPadding(dp(12), dp(5), dp(12), dp(5))
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        applyStatusBadgeStyle(badge, badgeLabel, event.isRegistered)
+        row.addView(badge)
         return row
     }
 
-    private fun createUpcomingEmptyState(): View {
+    private fun createDiscoverEventCard(event: DashboardUpcomingEvent, isFirst: Boolean): View {
+        val view = LayoutInflater.from(this).inflate(R.layout.item_attendee_event, discoverEventsLayout, false)
+        val params = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            topMargin = if (isFirst) dp(12) else 0
+            bottomMargin = dp(12)
+        }
+        view.layoutParams = params
+
+        val titleView = view.findViewById<TextView>(R.id.txtAttendeeEventTitle)
+        val statusView = view.findViewById<TextView>(R.id.txtAttendeeEventStatus)
+        val dateTimeView = view.findViewById<TextView>(R.id.txtAttendeeEventDateTime)
+        val locationView = view.findViewById<TextView>(R.id.txtAttendeeEventLocation)
+        val topStrip = view.findViewById<View>(R.id.viewEventTopStrip)
+        val dateLayout = view.findViewById<View>(R.id.layoutEventDate)
+        val dayView = view.findViewById<TextView>(R.id.txtEventDay)
+        val monthView = view.findViewById<TextView>(R.id.txtEventMonth)
+        val regCountView = view.findViewById<TextView>(R.id.txtRegistrationCount)
+        val regPercentView = view.findViewById<TextView>(R.id.txtRegistrationPercent)
+        val progressBar = view.findViewById<ProgressBar>(R.id.pbRegistration)
+
+        val statusLabel = event.status ?: "Upcoming"
+        titleView.text = event.title.ifBlank { "Untitled event" }
+        statusView.text = statusLabel
+        applyEventStatusUi(statusLabel, statusView, topStrip, dateLayout, dayView, monthView, progressBar)
+
+        val manila = ZoneId.of("Asia/Manila")
+        val startAt = event.eventStartAt
+        if (startAt != null) {
+            val zdt = startAt.atZone(manila)
+            dayView.text = zdt.dayOfMonth.toString()
+            monthView.text = zdt.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase(Locale.ENGLISH)
+            dateTimeView.text = zdt.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH))
+        } else {
+            dayView.text = "--"
+            monthView.text = "---"
+            dateTimeView.text = "-"
+        }
+
+        locationView.text = event.location?.takeIf { it.isNotBlank() } ?: "Location not set"
+
+        if (event.capacity > 0) {
+            val percentage = ((event.currentAttendeeCount.toFloat() / event.capacity.toFloat()) * 100f)
+                .toInt()
+                .coerceIn(0, 100)
+            regCountView.text = "${event.currentAttendeeCount} / ${event.capacity} registered"
+            regPercentView.text = "$percentage%"
+            regPercentView.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
+            progressBar.progress = percentage
+        } else {
+            regCountView.text = "${event.currentAttendeeCount} registered"
+            regPercentView.visibility = View.GONE
+            progressBar.visibility = View.GONE
+        }
+
+        view.setOnClickListener { openEventDetail(event) }
+        return view
+    }
+
+    private fun createEmptyStateView(message: String): View {
         return TextView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                topMargin = dp(23)
+                topMargin = dp(14)
             }
             gravity = Gravity.CENTER
-            text = "No upcoming events yet."
+            text = message
             setTextColor(0xFF6B7280.toInt())
-            textSize = 13f
+            textSize = 14f
             setPadding(dp(12), dp(20), dp(12), dp(20))
         }
+    }
+
+    private fun applyStatusBadgeStyle(textView: TextView, label: String, isRegistered: Boolean) {
+        when {
+            isRegistered -> {
+                textView.setBackgroundResource(R.drawable.bg_event_status_registered)
+                textView.setTextColor(0xFF4F46E5.toInt())
+            }
+            label.equals("Completed", true) -> {
+                textView.setBackgroundResource(R.drawable.bg_event_status_completed)
+                textView.setTextColor(0xFF10B981.toInt())
+            }
+            label.equals("Active", true) -> {
+                textView.setBackgroundResource(R.drawable.bg_event_status_active)
+                textView.setTextColor(0xFF06B6D4.toInt())
+            }
+            else -> {
+                textView.setBackgroundResource(R.drawable.bg_event_status_upcoming)
+                textView.setTextColor(0xFF4F46E5.toInt())
+            }
+        }
+    }
+
+    private fun applyEventStatusUi(
+        status: String,
+        statusView: TextView,
+        topStrip: View,
+        dateLayout: View,
+        dayView: TextView,
+        monthView: TextView,
+        progressBar: ProgressBar,
+    ) {
+        val isCompleted = status.equals("Completed", true)
+        val isActive = status.equals("Active", true) || status.equals("Ongoing", true)
+
+        val primaryColor = when {
+            isCompleted -> 0xFF10B981.toInt()
+            isActive -> 0xFF06B6D4.toInt()
+            else -> 0xFF4F46E5.toInt()
+        }
+
+        statusView.setBackgroundResource(
+            when {
+                isCompleted -> R.drawable.bg_event_status_completed
+                isActive -> R.drawable.bg_event_status_active
+                else -> R.drawable.bg_event_status_upcoming
+            },
+        )
+        statusView.setTextColor(primaryColor)
+
+        topStrip.setBackgroundColor(primaryColor)
+        dayView.setTextColor(primaryColor)
+        monthView.setTextColor(primaryColor)
+
+        dateLayout.setBackgroundResource(
+            when {
+                isCompleted -> R.drawable.bg_event_date_completed
+                isActive -> R.drawable.bg_event_date_active
+                else -> R.drawable.bg_event_date_upcoming
+            },
+        )
+
+        progressBar.progressDrawable = getDrawable(
+            when {
+                isCompleted -> R.drawable.pb_event_completed
+                isActive -> R.drawable.pb_event_active
+                else -> R.drawable.pb_event_upcoming
+            },
+        )
+    }
+
+    private fun openEventDetail(event: DashboardUpcomingEvent) {
+        val intent = Intent(this, com.thedavelopers.eventqr.features.attendee.EventDetailActivity::class.java).apply {
+            putExtra(EXTRA_EVENT_ID, event.eventId.toString())
+            putExtra(EXTRA_EVENT_TITLE, event.title)
+            putExtra(EXTRA_EVENT_LOCATION, event.location ?: "")
+            putExtra(EXTRA_EVENT_DESCRIPTION, event.description ?: "")
+            putExtra(EXTRA_EVENT_CATEGORY, event.category ?: "")
+            putExtra(EXTRA_EVENT_START, DateFormatters.formatInstant(event.eventStartAt))
+            putExtra(EXTRA_EVENT_END, DateFormatters.formatInstant(event.eventEndAt))
+            putExtra(EXTRA_EVENT_STATUS, event.status ?: "Upcoming")
+            putExtra(EXTRA_EVENT_CAPACITY, event.capacity.toString())
+            putExtra(EXTRA_EVENT_COUNT, event.currentAttendeeCount.toString())
+        }
+        startActivity(intent)
     }
 
     private fun setupPortalSwitcher() {
@@ -340,16 +463,16 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     private fun showPortalSwitcher(portals: List<String>) {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_portal_switcher, null)
-        
+
         val container = view.findViewById<LinearLayout>(R.id.portalOptionsContainer)
         portals.forEach { portal ->
             val portalView = layoutInflater.inflate(R.layout.item_portal_option, container, false)
             portalView.findViewById<TextView>(R.id.txtPortalName).text = portal
-            
+
             val icon = portalView.findViewById<ImageView>(R.id.imgPortalIcon)
             val subtitle = portalView.findViewById<TextView>(R.id.txtPortalSubtitle)
-            
-            when(portal) {
+
+            when (portal) {
                 "Attendee Portal" -> {
                     icon.setImageResource(R.drawable.ic_nav_profile)
                     subtitle.text = "Events, rewards, and your profile"
@@ -378,16 +501,14 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
             }
             container.addView(portalView)
         }
-        
+
         dialog.setContentView(view)
         dialog.show()
     }
 
     private fun switchToPortal(portal: String) {
-        when(portal) {
-            "Attendee Portal" -> {
-                // Already here
-            }
+        when (portal) {
+            "Attendee Portal" -> Unit
             "Staff Portal" -> {
                 startActivity(Intent(this, com.thedavelopers.eventqr.features.staff.StaffDashboardActivity::class.java))
             }
@@ -401,163 +522,23 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
         }
     }
 
-    private fun renderRecentActivity(activities: List<Any>?) {
-        while (recentActivityLayout.childCount > 1) {
-            recentActivityLayout.removeViewAt(1)
-        }
-        if (activities.isNullOrEmpty()) {
-            recentActivityLayout.addView(createRecentActivityEmptyState())
-            return
-        }
-    }
-
-    private fun renderRecentActivityState(text: String?, textColor: Int) {
-        while (recentActivityLayout.childCount > 1) {
-            recentActivityLayout.removeViewAt(1)
-        }
-        if (text.isNullOrBlank()) {
-            return
-        }
-
-        recentActivityLayout.addView(TextView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                topMargin = dp(18)
-            }
-            gravity = Gravity.CENTER
-            setTextColor(textColor)
-            textSize = 13f
-            setPadding(dp(12), dp(18), dp(12), dp(18))
-            this.text = text
-        })
-    }
-
-    private fun createTransactionPreviewRow(item: TransactionResponse): View {
-        val row = LayoutInflater.from(this).inflate(R.layout.item_transaction, recentActivityLayout, false)
-        val titleView = row.findViewById<TextView>(R.id.txtTransactionTitle)
-        val eventView = row.findViewById<TextView>(R.id.txtTransactionEvent)
-        val timeView = row.findViewById<TextView>(R.id.txtTransactionTime)
-        val pointsView = row.findViewById<TextView>(R.id.txtTransactionPoints)
-        val tagView = row.findViewById<TextView>(R.id.txtTransactionTag)
-        val iconLayout = row.findViewById<View>(R.id.layoutTransactionIcon)
-        val trendIcon = row.findViewById<ImageView>(R.id.imgTransactionTrend)
-
-        val isEarned = item.pointsDelta >= 0
-        val isApproved = item.transactionResult.name == "APPROVED"
-
-        titleView.text = item.reason ?: (if (isEarned) "Points Earned" else "Points Redeemed")
-        eventView.text = item.eventTitle ?: "Attendee transaction"
-        timeView.text = DateFormatters.formatInstant(item.scannedAt)
-
-        val deltaPrefix = if (isEarned) "+" else ""
-        pointsView.text = "$deltaPrefix${item.pointsDelta}"
-        pointsView.setTextColor(Color.parseColor(if (isEarned) "#10B981" else "#EF4444"))
-
-        tagView.text = if (isApproved) "Success" else "Failed"
-        tagView.setBackgroundResource(if (isApproved) R.drawable.bg_green_pill else R.drawable.bg_red_warning)
-        tagView.setTextColor(Color.parseColor(if (isApproved) "#059669" else "#DC2626"))
-
-        iconLayout.setBackgroundResource(if (isEarned) R.drawable.bg_transaction_earned_icon else R.drawable.bg_transaction_redeemed_icon)
-        trendIcon.setImageResource(if (isEarned) R.drawable.ic_trend_up else R.drawable.ic_trend_down)
-        return row
-    }
-
-    private fun createRecentActivityEmptyState(): View {
-        return TextView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                topMargin = dp(23)
-            }
-            gravity = Gravity.CENTER
-            text = "No recent activity yet."
-            setTextColor(0xFF6B7280.toInt())
-            textSize = 13f
-            setPadding(dp(12), dp(20), dp(12), dp(20))
-        }
-    }
-
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
     }
 
-    private fun configureActions(role: String?) {
-        val normalizedRole = RoleMapper.normalizeRole(role)
-        when (normalizedRole) {
-            AccountRole.STAFF.name -> {
-                attendeeCard.text = "Scanner"
-                staffCard.text = "Transactions"
-                organizerCard.text = "ID Printing"
-                notificationsCard.text = "Event Registrations"
-                rewardsCard.text = "Notifications"
-                reportsCard.visibility = View.GONE
-                logoutCard.visibility = View.VISIBLE
-
-                attendeeCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.staff.scanner.ScannerActivity::class.java)) }
-                staffCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.staff.StaffTransactionsActivity::class.java)) }
-                organizerCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.staff.IdPrintingActivity::class.java)) }
-                notificationsCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.staff.EventRegistrationsActivity::class.java)) }
-                rewardsCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeNotificationsActivity::class.java)) }
-                logoutCard.setOnClickListener { performLogout() }
-            }
-            AccountRole.ORGANIZER.name, AccountRole.ADMIN.name, AccountRole.SUPER_ADMIN.name -> {
-                attendeeCard.text = "Manage Events"
-                staffCard.text = "Manage Users"
-                organizerCard.text = "Scan Purposes"
-                notificationsCard.text = "Rewards"
-                rewardsCard.text = "Reports"
-                reportsCard.text = "Notifications"
-                reportsCard.visibility = View.VISIBLE
-                logoutCard.visibility = View.VISIBLE
-
-                attendeeCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.ManageEventsActivity::class.java)) }
-                staffCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.ManageUsersActivity::class.java)) }
-                organizerCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.ManageScanPurposesActivity::class.java)) }
-                notificationsCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.ManageRewardsActivity::class.java)) }
-                rewardsCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.ReportsActivity::class.java)) }
-                reportsCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.organizer.NotificationManagementActivity::class.java)) }
-                logoutCard.setOnClickListener { performLogout() }
-            }
-            else -> {
-                attendeeCard.text = "Browse Events"
-                staffCard.text = "My Registered Events"
-                organizerCard.text = "Transaction History"
-                notificationsCard.text = "Request Event"
-                
-                rewardsCard.visibility = View.GONE
-                reportsCard.visibility = View.GONE
-                logoutCard.visibility = View.GONE
-
-                attendeeCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeEventsActivity::class.java)) }
-                staffCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.RegisteredEventsActivity::class.java)) }
-                organizerCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeTransactionsActivity::class.java)) }
-                notificationsCard.setOnClickListener { startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.RequestEventActivity::class.java)) }
-            }
+    private fun configureActions() {
+        attendeeCard.setOnClickListener {
+            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeEventsActivity::class.java))
         }
-    }
-
-    private fun configureStandaloneAction(button: Button, label: String, onClick: () -> Unit) {
-        button.visibility = View.VISIBLE
-        button.text = label
-        button.isAllCaps = false
-        button.setTextColor(0xFF000000.toInt())
-        button.setBackgroundResource(R.drawable.bg_quick_action_button)
-        button.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(84),
-        ).apply {
-            topMargin = dp(16)
+        staffCard.setOnClickListener {
+            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.RegisteredEventsActivity::class.java))
         }
-        button.setOnClickListener { onClick() }
-    }
-
-    private fun performLogout() {
-        sessionManager.clearSession()
-        startActivity(Intent(this, com.thedavelopers.eventqr.features.landing.LandingActivity::class.java))
-        finish()
+        organizerCard.setOnClickListener {
+            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.AttendeeTransactionsActivity::class.java))
+        }
+        notificationsCard.setOnClickListener {
+            startActivity(Intent(this, com.thedavelopers.eventqr.features.attendee.RequestEventActivity::class.java))
+        }
     }
 
     private fun stopSwipeRefresh() {

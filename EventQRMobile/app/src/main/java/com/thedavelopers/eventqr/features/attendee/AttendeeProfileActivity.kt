@@ -2,6 +2,7 @@ package com.thedavelopers.eventqr.features.attendee
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -10,7 +11,6 @@ import androidx.lifecycle.lifecycleScope
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.core.session.SessionManager
 import com.thedavelopers.eventqr.core.util.RoleMapper
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 open class AttendeeProfileActivity : AppCompatActivity() {
@@ -24,11 +24,26 @@ open class AttendeeProfileActivity : AppCompatActivity() {
         sessionManager = SessionManager(this)
         repository = AttendeeRepository(this)
         
-        findViewById<Button>(R.id.btnEditProfile).setOnClickListener {
+        findViewById<View>(R.id.cardEditProfile).setOnClickListener {
             startActivity(Intent(this, AttendeeEditProfileActivity::class.java))
         }
-        findViewById<Button>(R.id.btnProfileLogout).setOnClickListener {
-            sessionManager.clearSession()
+        findViewById<View>(R.id.cardMyEvents).setOnClickListener {
+            startActivity(Intent(this, RegisteredEventsActivity::class.java))
+        }
+        findViewById<View>(R.id.cardTransactionHistory).setOnClickListener {
+            startActivity(Intent(this, AttendeeTransactionsActivity::class.java))
+        }
+        findViewById<View>(R.id.cardClaimedRewards).setOnClickListener {
+            startActivity(Intent(this, ClaimedRewardsActivity::class.java))
+        }
+        findViewById<View>(R.id.cardMyEventRequests).setOnClickListener {
+            startActivity(Intent(this, MyEventRequestsActivity::class.java))
+        }
+        findViewById<View>(R.id.cardNotifications).setOnClickListener {
+            startActivity(Intent(this, AttendeeNotificationsActivity::class.java))
+        }
+
+        findViewById<Button>(R.id.btnProfileLogout).setOnClickListener {            sessionManager.clearSession()
             startActivity(
                 Intent(this, com.thedavelopers.eventqr.features.auth.login.LoginActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -64,13 +79,13 @@ open class AttendeeProfileActivity : AppCompatActivity() {
     }
 
     private fun renderProfile() {
-        findViewById<TextView>(R.id.txtProfileName).text =
+        findViewById<TextView>(R.id.txtProfileName)?.text =
             sessionManager.getFullName()?.takeIf { it.isNotBlank() } ?: "Attendee"
-        findViewById<TextView>(R.id.txtProfileRole).text =
+        findViewById<TextView>(R.id.txtProfileRole)?.text =
             RoleMapper.getDisplayName(sessionManager.getUserRole())
-        findViewById<TextView>(R.id.txtProfileEmail).text =
+        findViewById<TextView>(R.id.txtProfileEmail)?.text =
             sessionManager.getEmail()?.takeIf { it.isNotBlank() } ?: "No email saved"
-        findViewById<TextView>(R.id.txtPhone).text =
+        findViewById<TextView>(R.id.txtPhone)?.text =
             sessionManager.getPhone()?.takeIf { it.isNotBlank() } ?: "No Phone Number saved"
     }
 }

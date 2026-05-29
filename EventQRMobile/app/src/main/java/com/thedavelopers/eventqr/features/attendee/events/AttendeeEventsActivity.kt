@@ -22,10 +22,13 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
     private lateinit var retryButton: Button
     private lateinit var allTab: TextView
     private lateinit var upcomingTab: TextView
+    private lateinit var activeTab: TextView
     private lateinit var pastTab: TextView
     private lateinit var adapter: AttendeeEventAdapter
     private var allEvents: List<AttendeeEventResponse> = emptyList()
     private var selectedFilter: EventFilter = EventFilter.ALL
+
+    enum class EventFilter { ALL, UPCOMING, ACTIVE, COMPLETED }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +42,7 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         retryButton = findViewById(R.id.btnRefreshEvents)
         allTab = findViewById(R.id.tabEventsAll)
         upcomingTab = findViewById(R.id.tabEventsUpcoming)
+        activeTab = findViewById(R.id.tabEventsActive)
         pastTab = findViewById(R.id.tabEventsPast)
         adapter = AttendeeEventAdapter { event -> openEventDetail(event) }
 
@@ -48,9 +52,44 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         retryButton.setOnClickListener { presenter.loadEvents() }
         allTab.setOnClickListener { selectFilter(EventFilter.ALL) }
         upcomingTab.setOnClickListener { selectFilter(EventFilter.UPCOMING) }
-        pastTab.setOnClickListener { selectFilter(EventFilter.PAST) }
+        activeTab.setOnClickListener { selectFilter(EventFilter.ACTIVE) }
+        pastTab.setOnClickListener { selectFilter(EventFilter.COMPLETED) }
         updateTabs()
         presenter.loadEvents()
+
+        findViewById<android.widget.EditText>(R.id.inputEventSearch).addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filterBySearch(s.toString())
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+    }
+
+    private fun filterBySearch(query: String) {
+        val filtered = if (query.isBlank()) {
+            getFilteredByStatus()
+        } else {
+            getFilteredByStatus().filter { it.title.contains(query, ignoreCase = true) }
+        }
+        adapter.submitItems(filtered)
+        recyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        emptyView.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun getFilteredByStatus(): List<AttendeeEventResponse> {
+        return when (selectedFilter) {
+            EventFilter.ALL -> sortAll(allEvents)
+            EventFilter.UPCOMING -> allEvents.filter { it.eventStartAt?.isAfter(Instant.now()) == true }.sortedBy { it.eventStartAt }
+            EventFilter.ACTIVE -> allEvents.filter { isOngoingEvent(it) }.sortedBy { it.eventStartAt }
+            EventFilter.COMPLETED -> allEvents.filter { isPastEvent(it) }.sortedByDescending { it.eventEndAt }
+        }
+    }
+
+    private fun isOngoingEvent(item: AttendeeEventResponse): Boolean {
+        val now = Instant.now()
+        return item.eventStartAt != null && item.eventEndAt != null &&
+                !item.eventStartAt.isAfter(now) && !item.eventEndAt.isBefore(now)
     }
 
     override fun onDestroy() {
@@ -99,7 +138,8 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         emptyView.text = when (selectedFilter) {
             EventFilter.ALL -> "No events available yet."
             EventFilter.UPCOMING -> "No upcoming events yet."
-            EventFilter.PAST -> "No past events yet."
+            EventFilter.ACTIVE -> "No active events yet."
+            EventFilter.COMPLETED -> "No completed events yet."
         }
         retryButton.visibility = View.VISIBLE
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -112,43 +152,46 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
     }
 
     private fun updateTabs() {
-        allTab.setBackgroundResource(if (selectedFilter == EventFilter.ALL) R.drawable.bg_segment_selected else 0)
-        upcomingTab.setBackgroundResource(if (selectedFilter == EventFilter.UPCOMING) R.drawable.bg_segment_selected else 0)
-        pastTab.setBackgroundResource(if (selectedFilter == EventFilter.PAST) R.drawable.bg_segment_selected else 0)
+        val selectedBg = R.drawable.bg_event_filter_chip_selected
+        val unselectedBg = R.drawable.bg_event_filter_chip_unselected
+        val white = 0xFFFFFFFF.toInt()
+        val gray = 0xFF6B7280.toInt()
+
+        allTab.setBackgroundResource(if (selectedFilter == EventFilter.ALL) selectedBg else unselectedBg)
+        allTab.setTextColor(if (selectedFilter == EventFilter.ALL) white else gray)
+
+        upcomingTab.setBackgroundResource(if (selectedFilter == EventFilter.UPCOMING) selectedBg else unselectedBg)
+        upcomingTab.setTextColor(if (selectedFilter == EventFilter.UPCOMING) white else gray)
+
+        activeTab.setBackgroundResource(if (selectedFilter == EventFilter.ACTIVE) selectedBg else unselectedBg)
+        activeTab.setTextColor(if (selectedFilter == EventFilter.ACTIVE) white else gray)
+
+        pastTab.setBackgroundResource(if (selectedFilter == EventFilter.COMPLETED) selectedBg else unselectedBg)
+        pastTab.setTextColor(if (selectedFilter == EventFilter.COMPLETED) white else gray)
     }
 
     private fun renderFilteredEvents() {
-        val filtered = when (selectedFilter) {
-            EventFilter.ALL -> sortAll(allEvents)
-            EventFilter.UPCOMING -> allEvents.filter { isUpcomingOrOngoingEvent(it) }.sortedWith(compareBy(nullsLast()) { it.eventStartAt })
-            EventFilter.PAST -> allEvents.filter { isPastEvent(it) }.sortedWith(compareByDescending<AttendeeEventResponse> { it.eventStartAt ?: it.eventEndAt ?: Instant.EPOCH })
-        }
+        val filtered = getFilteredByStatus()
         adapter.submitItems(filtered)
         recyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
         emptyView.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         emptyView.text = when (selectedFilter) {
             EventFilter.ALL -> "No events available yet."
             EventFilter.UPCOMING -> "No upcoming events yet."
-            EventFilter.PAST -> "No past events yet."
+            EventFilter.ACTIVE -> "No active events yet."
+            EventFilter.COMPLETED -> "No completed events yet."
         }
     }
 
     private fun sortAll(items: List<AttendeeEventResponse>): List<AttendeeEventResponse> {
-        val upcoming = items.filter { isUpcomingOrOngoingEvent(it) }.sortedWith(compareBy(nullsLast()) { it.eventStartAt })
-        val scheduled = items.filter { !isUpcomingOrOngoingEvent(it) && !isPastEvent(it) }.sortedWith(compareBy(nullsLast()) { it.eventStartAt })
-        val past = items.filter { isPastEvent(it) }.sortedWith(compareByDescending<AttendeeEventResponse> { it.eventStartAt ?: it.eventEndAt ?: Instant.EPOCH })
-        return upcoming + scheduled + past
+        val ongoing = items.filter { isOngoingEvent(it) }.sortedBy { it.eventStartAt }
+        val upcoming = items.filter { it.eventStartAt?.isAfter(Instant.now()) == true }.sortedBy { it.eventStartAt }
+        val completed = items.filter { isPastEvent(it) }.sortedByDescending { it.eventEndAt }
+        return ongoing + upcoming + completed
     }
 
     private fun isPastEvent(item: AttendeeEventResponse): Boolean {
         val now = Instant.now()
         return item.eventEndAt?.isBefore(now) == true
-    }
-
-    private fun isUpcomingOrOngoingEvent(item: AttendeeEventResponse): Boolean {
-        val now = Instant.now()
-        return item.eventStartAt?.isAfter(now) == true ||
-            (item.eventStartAt != null && item.eventEndAt != null &&
-                !item.eventStartAt.isAfter(now) && !item.eventEndAt.isBefore(now))
     }
 }

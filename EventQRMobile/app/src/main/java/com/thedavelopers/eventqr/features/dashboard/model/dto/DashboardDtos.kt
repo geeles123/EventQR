@@ -11,6 +11,7 @@ data class DashboardSummary(
     val totalNotifications: Long,
     val fullName: String? = null,
     val upcomingEvents: List<DashboardUpcomingEvent>? = emptyList(),
+    val discoverEvents: List<DashboardUpcomingEvent>? = emptyList(),
 )
 
 data class DashboardUpcomingEvent(
@@ -25,4 +26,5 @@ data class DashboardUpcomingEvent(
     val eventEndAt: Instant? = null,
     val capacity: Int = 0,
     val currentAttendeeCount: Int = 0,
+    val isRegistered: Boolean = false,
 )
