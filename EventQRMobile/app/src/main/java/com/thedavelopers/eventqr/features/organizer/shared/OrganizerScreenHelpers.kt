@@ -421,32 +421,31 @@ internal fun AppCompatActivity.bottomNav(selected: String): LinearLayout {
     val nav = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
-        setPadding(dp(18), dp(6), dp(18), dp(6))
+        setPadding(dp(20), 0, dp(20), 0)
         setBackgroundColor(Color.WHITE)
-        elevation = dp(6).toFloat()
+        elevation = dp(8).toFloat()
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             dp(76),
         )
     }
+    val currentEventId = selectedEventId().takeIf { it.isNotBlank() }
     val items = listOf(
         Triple(NAV_DASHBOARD, com.thedavelopers.eventqr.R.drawable.ic_nav_home, {
             if (this@bottomNav !is OrganizerDashboardActivity) openOrganizerPage(OrganizerDashboardActivity::class.java)
         }),
         Triple(NAV_EVENTS, com.thedavelopers.eventqr.R.drawable.ic_nav_calendar, {
-            if (this@bottomNav !is ManageEventsActivity) openOrganizerPage(ManageEventsActivity::class.java)
+            if (this@bottomNav !is ManageEventsActivity) openOrganizerPage(ManageEventsActivity::class.java, currentEventId)
         }),
         Triple(NAV_ATTENDEES, com.thedavelopers.eventqr.R.drawable.ic_group, {
             if (selected != NAV_ATTENDEES) {
-                openOrganizerPlaceholder(
-                    title = "Attendees",
-                    message = "Attendee management details will be available in a follow-up release.",
-                    selectedNav = NAV_ATTENDEES,
-                )
+                openOrganizerPage(com.thedavelopers.eventqr.features.organizer.attendees.AttendeeManagementActivity::class.java, currentEventId)
             }
         }),
         Triple(NAV_REPORTS, com.thedavelopers.eventqr.R.drawable.ic_search, {
-            if (this@bottomNav !is OrganizerOverallReportsActivity) openOrganizerPage(OrganizerOverallReportsActivity::class.java)
+            if (this@bottomNav !is com.thedavelopers.eventqr.features.organizer.reports.EventReportsActivity) {
+                openOrganizerPage(com.thedavelopers.eventqr.features.organizer.reports.EventReportsActivity::class.java, currentEventId)
+            }
         }),
     )
     items.forEach { (label, iconRes, onClick) ->
@@ -454,19 +453,21 @@ internal fun AppCompatActivity.bottomNav(selected: String): LinearLayout {
         nav.addView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(2), dp(4), dp(2), dp(4))
+            setPadding(0, dp(8), 0, dp(8))
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
-                setMargins(dp(2), 0, dp(2), 0)
+                setMargins(0, 0, 0, 0)
             }
             addView(ImageView(this@bottomNav).apply {
-                layoutParams = LinearLayout.LayoutParams(dp(38), dp(38))
-                background = if (isSelected) {
-                    rounded(PURPLE, 16, null, density = resources.displayMetrics.density)
-                } else {
-                    rounded(Color.TRANSPARENT, 16, null, density = resources.displayMetrics.density)
-                }
+                layoutParams = LinearLayout.LayoutParams(dp(39), dp(39))
+                setBackgroundResource(
+                    if (isSelected) {
+                        com.thedavelopers.eventqr.R.drawable.bg_nav_icon_active
+                    } else {
+                        com.thedavelopers.eventqr.R.drawable.bg_nav_icon_inactive
+                    }
+                )
                 setImageResource(iconRes)
-                setPadding(dp(9), dp(9), dp(9), dp(9))
+                setPadding(dp(if (isSelected) 9 else 8), dp(if (isSelected) 9 else 8), dp(if (isSelected) 9 else 8), dp(if (isSelected) 9 else 8))
                 setColorFilter(if (isSelected) Color.WHITE else Color.parseColor("#9CA3AF"))
             })
             addView(text(label, 11, isSelected, if (isSelected) PURPLE else Color.parseColor("#9CA3AF")).apply {

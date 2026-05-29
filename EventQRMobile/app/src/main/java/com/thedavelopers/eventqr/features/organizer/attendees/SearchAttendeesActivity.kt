@@ -1,0 +1,130 @@
+package com.thedavelopers.eventqr.features.organizer.attendees
+
+import android.content.Intent
+import android.graphics.Color
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.thedavelopers.eventqr.R
+import com.thedavelopers.eventqr.features.organizer.EXTRA_EVENT_ID
+import com.thedavelopers.eventqr.features.organizer.EXTRA_EVENT_TITLE
+import com.thedavelopers.eventqr.features.organizer.OrganizerMvpAttendee
+import com.thedavelopers.eventqr.features.organizer.OrganizerMvpEvent
+import com.thedavelopers.eventqr.features.organizer.OrganizerRepository
+import com.thedavelopers.eventqr.features.organizer.intentEventId
+import com.thedavelopers.eventqr.features.organizer.matchesOrganizerAttendeeQuery
+import com.thedavelopers.eventqr.features.organizer.resolveSelectedEvent
+import com.thedavelopers.eventqr.features.organizer.selectedEventId
+import com.thedavelopers.eventqr.features.organizer.showMissingEventScreen
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+
+open class SearchAttendeesActivity : AppCompatActivity() {
+    private lateinit var repository: OrganizerRepository
+    private lateinit var selectedEvent: OrganizerMvpEvent
+    private lateinit var adapter: SearchAttendeesAdapter
+    private lateinit var searchInput: EditText
+    private lateinit var emptyState: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var filterChips: Map<String, TextView>
+    private var attendees: List<OrganizerMvpAttendee> = emptyList()
+    private var currentFilter = "All"
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_search_attendees)
+
+        repository = OrganizerRepository(this)
+        val eventId = intentEventId() ?: selectedEventId().takeIf { it.isNotBlank() }
+            ?: return showMissingEventScreen("Search Attendees")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId)
+            ?: return showMissingEventScreen("Search Attendees")
+
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<TextView>(R.id.txtSearchTitle).text = "Search Attendees"
+        findViewById<TextView>(R.id.txtSearchSubtitle).text = selectedEvent.title
+
+        searchInput = findViewById(R.id.edtSearchAttendees)
+        searchInput.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_search, 0)
+        searchInput.compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.organizer_search_icon_padding)
+        emptyState = findViewById(R.id.txtSearchEmpty)
+        progressBar = findViewById(R.id.progressSearchAttendees)
+
+        adapter = SearchAttendeesAdapter { openDetails(it) }
+        findViewById<RecyclerView>(R.id.recyclerSearchAttendees).apply {
+            layoutManager = LinearLayoutManager(this@SearchAttendeesActivity)
+            adapter = this@SearchAttendeesActivity.adapter
+        }
+
+        filterChips = mapOf(
+            "All" to findViewById(R.id.chipAll),
+            "Registered" to findViewById(R.id.chipRegistered),
+            "Checked In" to findViewById(R.id.chipCheckedIn),
+            "Exited" to findViewById(R.id.chipExited),
+            "No Show" to findViewById(R.id.chipNoShow),
+        )
+        filterChips.forEach { (label, chip) ->
+            chip.setOnClickListener {
+                currentFilter = label
+                updateChips()
+                render()
+            }
+        }
+
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = render()
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
+
+        updateChips()
+        loadAttendees()
+    }
+
+    private fun loadAttendees() {
+        progressBar.visibility = View.VISIBLE
+        MainScope().launch {
+            val load = repository.loadAttendeesForMvp(selectedEvent.id)
+            attendees = load.data
+            progressBar.visibility = View.GONE
+            render()
+        }
+    }
+
+    private fun render() {
+        val query = searchInput.text?.toString().orEmpty()
+        val filtered = attendees.filter { it.matchesOrganizerAttendeeQuery(query, currentFilter) }
+        adapter.submitItems(filtered)
+        emptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        emptyState.text = if (attendees.isEmpty()) "No attendees found for this event." else "No attendees match your search."
+    }
+
+    private fun updateChips() {
+        filterChips.forEach { (label, chip) ->
+            val selected = label == currentFilter
+            chip.setBackgroundResource(if (selected) R.drawable.bg_event_filter_chip_selected else R.drawable.bg_event_filter_chip_unselected)
+            chip.setTextColor(if (selected) Color.WHITE else Color.parseColor("#4B5563"))
+        }
+    }
+
+    private fun openDetails(attendee: OrganizerMvpAttendee) {
+        startActivity(
+            Intent(this, AttendeeDetailsActivity::class.java)
+                .putExtra(EXTRA_EVENT_ID, selectedEvent.id)
+                .putExtra(EXTRA_EVENT_TITLE, selectedEvent.title)
+                .putExtra(EXTRA_ATTENDEE_ID, attendee.id)
+        )
+    }
+
+    companion object {
+        const val EXTRA_ATTENDEE_ID = "extra_attendee_id"
+    }
+}

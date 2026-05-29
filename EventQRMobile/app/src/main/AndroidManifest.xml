@@ -58,6 +58,8 @@
         <activity android:name=".features.organizer.dashboard.OrganizerDashboardActivity" android:exported="false" />
         <activity android:name=".features.organizer.attendees.AttendeeManagementActivity" android:exported="false" />
         <activity android:name=".features.organizer.attendees.AttendeeDetailsActivity" android:exported="false" />
+        <activity android:name=".features.organizer.attendees.SearchAttendeesActivity" android:exported="false" />
+        <activity android:name=".features.organizer.SearchAttendeesActivity" android:exported="false" />
         <activity android:name=".features.organizer.transactions.TransactionLogsActivity" android:exported="false" />
         <activity android:name=".features.organizer.reports.EventReportsActivity" android:exported="false" />
         <activity android:name=".features.organizer.NotificationManagementActivity" android:exported="false" />

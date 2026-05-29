@@ -93,6 +93,7 @@ open class EventManagementHubActivity : AppCompatActivity() {
             
             val menuItems = listOf(
                 Triple("Staff Assignment", com.thedavelopers.eventqr.R.drawable.ic_admin_users, ManageUsersActivity::class.java),
+                Triple("Attendees", com.thedavelopers.eventqr.R.drawable.ic_group, com.thedavelopers.eventqr.features.organizer.attendees.AttendeeManagementActivity::class.java),
                 Triple("Scan Purposes", com.thedavelopers.eventqr.R.drawable.ic_qr_scan, ManageScanPurposesActivity::class.java),
                 Triple("Transaction Rules", com.thedavelopers.eventqr.R.drawable.ic_admin_shield, TransactionRulesActivity::class.java),
                 Triple("ID Template", com.thedavelopers.eventqr.R.drawable.ic_file, IdTemplatePlaceholderActivity::class.java),

@@ -1,161 +1,142 @@
 package com.thedavelopers.eventqr.features.organizer.attendees
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
-import android.view.ViewGroup
-import android.graphics.Color
-import android.widget.EditText
+import android.view.View
+import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.thedavelopers.eventqr.features.organizer.*
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.thedavelopers.eventqr.R
+import com.thedavelopers.eventqr.features.organizer.AttendeeManagementAdapter
+import com.thedavelopers.eventqr.features.organizer.EXTRA_EVENT_ID
+import com.thedavelopers.eventqr.features.organizer.EXTRA_EVENT_TITLE
+import com.thedavelopers.eventqr.features.organizer.NAV_ATTENDEES
+import com.thedavelopers.eventqr.features.organizer.OrganizerMvpAttendee
+import com.thedavelopers.eventqr.features.organizer.OrganizerMvpDataSource
+import com.thedavelopers.eventqr.features.organizer.OrganizerMvpEvent
+import com.thedavelopers.eventqr.features.organizer.OrganizerMvpLoad
+import com.thedavelopers.eventqr.features.organizer.OrganizerRepository
+import com.thedavelopers.eventqr.features.organizer.bottomNav
+import com.thedavelopers.eventqr.features.organizer.eventSelector
+import com.thedavelopers.eventqr.features.organizer.intentEventId
+import com.thedavelopers.eventqr.features.organizer.organizerEventDateLine
+import com.thedavelopers.eventqr.features.organizer.resolveSelectedEvent
+import com.thedavelopers.eventqr.features.organizer.saveSelectedEventId
+import com.thedavelopers.eventqr.features.organizer.selectedEventId
+import com.thedavelopers.eventqr.features.organizer.statusBucket
+import com.thedavelopers.eventqr.features.organizer.showMissingEventScreen
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 open class AttendeeManagementActivity : AppCompatActivity() {
     private lateinit var repository: OrganizerRepository
     private lateinit var selectedEvent: OrganizerMvpEvent
-    private lateinit var summary: LinearLayout
-    private lateinit var search: EditText
-    private lateinit var list: LinearLayout
-    private lateinit var detail: LinearLayout
-    private var filter = "All"
-    private var attendeesSource: OrganizerMvpLoad<List<OrganizerMvpAttendee>> =
-        OrganizerMvpLoad(emptyList(), OrganizerMvpDataSource.ERROR, null)
+    private lateinit var adapter: AttendeeManagementAdapter
+    private lateinit var progressBar: ProgressBar
+    private lateinit var emptyState: TextView
+    private lateinit var txtTotal: TextView
+    private lateinit var txtCheckedIn: TextView
+    private lateinit var txtNoShow: TextView
+    private lateinit var txtBannerTitle: TextView
+    private lateinit var txtBannerDate: TextView
+    private lateinit var eventSelectorHost: LinearLayout
+    private lateinit var bottomNavHost: LinearLayout
+
+    private var attendees: List<OrganizerMvpAttendee> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_attendee_management)
+
         repository = OrganizerRepository(this)
-        val eventId = intentEventId() ?: return showMissingEventScreen("Attendee Management")
-        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId) ?: return showMissingEventScreen("Attendee Management")
-        val content = organizerShell("Attendee Management", selectedEvent.title, NAV_ATTENDEES)
-        val approved = repository.getApprovedOrganizerEvents().approvedOnly()
-        if (approved.size > 1) content.addView(eventSelector(repository.getApprovedOrganizerEvents(), selectedEvent.id) {
-            selectedEvent = it
-            repository.saveSelectedEventId(it.id)
-            saveSelectedEventId(it.id)
-            loadAttendees()
-        })
-        summary = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        content.addView(summary)
-        search = EditText(this).apply {
-            hint = "Search attendee"
-            background = rounded(Color.WHITE, 10, BORDER, density = resources.displayMetrics.density)
-            setPadding(dp(12), 0, dp(12), 0)
+        val eventId = intentEventId() ?: selectedEventId().takeIf { it.isNotBlank() }
+            ?: return showMissingEventScreen("Attendee Management")
+        selectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), eventId)
+            ?: return showMissingEventScreen("Attendee Management")
+
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<TextView>(R.id.btnFilter).setOnClickListener {
+            startActivity(
+                Intent(this, SearchAttendeesActivity::class.java)
+                    .putExtra(EXTRA_EVENT_ID, selectedEvent.id)
+                    .putExtra(EXTRA_EVENT_TITLE, selectedEvent.title)
+            )
         }
-        list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        detail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        content.addView(search)
-        content.addView(filterChips(listOf("All", "Registered", "Entered", "Exited")) {
-            filter = it
-            render()
-        })
-        content.addView(list)
-        content.addView(section("Attendee Detail"))
-        content.addView(detail)
-        search.afterTextChanged { render() }
-        list.addView(loadingState("Loading attendees..."))
+
+        txtBannerTitle = findViewById(R.id.txtEventMiniTitle)
+        txtBannerDate = findViewById(R.id.txtEventMiniDate)
+        txtTotal = findViewById(R.id.txtTotalCount)
+        txtCheckedIn = findViewById(R.id.txtCheckedInCount)
+        txtNoShow = findViewById(R.id.txtNoShowCount)
+        progressBar = findViewById(R.id.progressAttendees)
+        emptyState = findViewById(R.id.txtAttendeesEmpty)
+        eventSelectorHost = findViewById(R.id.layoutEventSelectorHost)
+        bottomNavHost = findViewById(R.id.layoutBottomNavHost)
+
+        val spinner: Spinner = eventSelector(repository.getApprovedOrganizerEvents(), selectedEvent.id) { event ->
+            selectedEvent = event
+            repository.saveSelectedEventId(event.id)
+            saveSelectedEventId(event.id)
+            bindEventHeader()
+            loadAttendees()
+        }
+        eventSelectorHost.addView(spinner)
+
+        adapter = AttendeeManagementAdapter { attendee -> openDetails(attendee) }
+        findViewById<RecyclerView>(R.id.recyclerAttendees).apply {
+            layoutManager = LinearLayoutManager(this@AttendeeManagementActivity)
+            adapter = this@AttendeeManagementActivity.adapter
+        }
+
+        bottomNavHost.addView(bottomNav(NAV_ATTENDEES))
+        bindEventHeader()
         loadAttendees()
     }
 
     private fun loadAttendees() {
+        progressBar.visibility = View.VISIBLE
         MainScope().launch {
-            attendeesSource = repository.loadAttendeesForMvp(selectedEvent.id)
-            render()
+            val load = repository.loadAttendeesForMvp(selectedEvent.id)
+            attendees = load.data
+            progressBar.visibility = View.GONE
+            render(load)
         }
     }
 
-    private fun renderSummary(attendees: List<OrganizerMvpAttendee>) {
-        summary.removeAllViews()
-        summary.addView(row().apply {
-            addView(summaryCard("Total Registered", attendees.size.toString()))
-            addView(summaryCard("Checked In", attendees.count { it.currentEventStatus == "Checked In / Entered" }.toString(), SUCCESS))
-        })
-        summary.addView(row().apply {
-            addView(summaryCard("Attended", attendees.count { it.currentEventStatus == "Attended" }.toString(), SUCCESS))
-            addView(summaryCard("No-shows", attendees.count { it.currentEventStatus == "No-show" }.toString(), ERROR))
-        })
-        dataSourceBanner(attendeesSource)?.let { summary.addView(it) }
+    private fun bindEventHeader() {
+        findViewById<TextView>(R.id.txtManagementEventName).text = selectedEvent.title
+        txtBannerTitle.text = selectedEvent.title
+        txtBannerDate.text = organizerEventDateLine(selectedEvent.shortDate, selectedEvent.title, selectedEvent.venue)
     }
 
-    private fun filterChips(labels: List<String>, onClick: (String) -> Unit): LinearLayout =
-        row().apply {
-            gravity = Gravity.START
-            labels.forEach { label ->
-                addView(chip(label, label == filter).apply {
-                    setOnClickListener { onClick(label) }
-                })
-            }
-        }
+    private fun render(load: OrganizerMvpLoad<List<OrganizerMvpAttendee>>) {
+        val checkedIn = attendees.count { it.statusBucket().equals("Checked In", ignoreCase = true) }
+        val noShow = attendees.count { it.statusBucket().equals("No Show", ignoreCase = true) }
 
-    private fun render() {
-        val q = search.text.toString()
-        val allAttendees = attendeesSource.data
-        renderSummary(allAttendees)
-        val attendees = allAttendees.filter {
-            val matchesStatus = when (filter) {
-                "All" -> true
-                "Registered" -> it.registrationStatus.equals("Registered", true)
-                "Entered" -> it.currentEventStatus == "Checked In / Entered" || it.currentEventStatus == "Attended"
-                "Exited" -> it.currentEventStatus == "Exited"
-                else -> it.currentEventStatus.equals(filter, true) || it.registrationStatus.equals(filter, true)
-            }
-            matchesStatus && (
-                it.name.contains(q, true) ||
-                    it.email.contains(q, true) ||
-                    it.id.contains(q, true) ||
-                    it.qrCredentialStatus.contains(q, true)
-                )
+        txtTotal.text = attendees.size.toString()
+        txtCheckedIn.text = checkedIn.toString()
+        txtNoShow.text = noShow.toString()
+
+        adapter.submitItems(attendees)
+        emptyState.visibility = if (attendees.isEmpty()) View.VISIBLE else View.GONE
+        emptyState.text = when {
+            load.source == OrganizerMvpDataSource.ERROR -> load.message ?: "Attendees could not be loaded."
+            attendees.isEmpty() -> "No attendees registered yet."
+            else -> ""
         }
-        list.removeAllViews()
-        if (attendees.isEmpty()) {
-            list.addView(if (attendeesSource.source == OrganizerMvpDataSource.ERROR) {
-                errorState(attendeesSource.message ?: "Attendees could not be loaded.") { loadAttendees() }
-            } else {
-                emptyState("No attendees registered yet.")
-            })
-            detail.removeAllViews()
-            return
-        }
-        attendees.forEach { list.addView(attendeeCard(it)) }
-        renderDetail(attendees.first())
     }
 
-    private fun attendeeCard(attendee: OrganizerMvpAttendee): LinearLayout =
-        card().apply {
-            val top = row()
-            top.addView(text(attendee.name, 17, true).apply {
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            })
-            top.addView(badge(if (attendee.currentEventStatus == "No-show") "Rejected" else "Accepted"))
-            addView(top)
-            addView(text(attendee.email, 13, false, MUTED))
-            addView(row().apply {
-                addView(chip("${attendee.points} pts"))
-                addView(chip(attendee.lastTransactionTime, false, SUCCESS))
-            })
-            addView(text("Registered: ${attendee.registeredDate}", 12, false, MUTED))
-            addView(text("Registration: ${attendee.registrationStatus} | Current: ${attendee.currentEventStatus}", 12, false, MUTED))
-            setOnClickListener { renderDetail(attendee) }
-        }
-
-    private fun renderDetail(attendee: OrganizerMvpAttendee) {
-        detail.removeAllViews()
-        detail.addView(card().apply {
-            addView(text(attendee.name, 18, true))
-            addView(text("${attendee.email}\n${attendee.phone}", 13, false, MUTED))
-            addView(text("Registration status: ${attendee.registrationStatus}"))
-            addView(text("QR credential status: ${attendee.qrCredentialStatus}"))
-            addView(text("Current event status: ${attendee.currentEventStatus}"))
-            addView(text("Event-specific points: ${attendee.points}"))
-            addView(section("Recent Transactions"))
-            addView(text(attendee.recentTransactions.ifEmpty { listOf("No recent transactions.") }.joinToString("\n"), 13, false, MUTED))
-            addView(section("Recent Rejected Scans"))
-            addView(text(attendee.recentRejectedScans.ifEmpty { listOf("No recent rejected scans.") }.joinToString("\n"), 13, false, MUTED))
-            addView(ghostButton("View transactions") { openOrganizerPage(TransactionLogsActivity::class.java, selectedEvent.id, selectedEvent.title) })
-            addView(ghostButton("Reprint ID") { Toast.makeText(this@AttendeeManagementActivity, "ID reprint flow is not wired on this screen.", Toast.LENGTH_SHORT).show() })
-            addView(ghostButton("Manual support note") { Toast.makeText(this@AttendeeManagementActivity, "Support notes are not wired on this screen.", Toast.LENGTH_SHORT).show() })
-        })
-        detail.addView(stateCard())
+    private fun openDetails(attendee: OrganizerMvpAttendee) {
+        startActivity(
+            Intent(this, AttendeeDetailsActivity::class.java)
+                .putExtra(EXTRA_EVENT_ID, selectedEvent.id)
+                .putExtra(EXTRA_EVENT_TITLE, selectedEvent.title)
+                .putExtra(SearchAttendeesActivity.EXTRA_ATTENDEE_ID, attendee.id)
+        )
     }
 }

@@ -1,29 +1,27 @@
 package com.thedavelopers.eventqr.features.organizer
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.thedavelopers.eventqr.R
-import com.thedavelopers.eventqr.core.api.dto.RegistrationStatus
-import com.thedavelopers.eventqr.core.util.DateFormatters
-import com.thedavelopers.eventqr.features.registrations.model.dto.RegistrationResponse
 
 class AttendeeManagementAdapter(
-    private val onClick: (RegistrationResponse) -> Unit
+    private val onClick: (OrganizerMvpAttendee) -> Unit,
 ) : RecyclerView.Adapter<AttendeeManagementAdapter.ViewHolder>() {
 
-    private val items = mutableListOf<RegistrationResponse>()
+    private val items = mutableListOf<OrganizerMvpAttendee>()
 
-    fun submitItems(newItems: List<RegistrationResponse>) {
+    fun submitItems(newItems: List<OrganizerMvpAttendee>) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_registration, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_organizer_attendee, parent, false)
         return ViewHolder(view)
     }
 
@@ -34,18 +32,29 @@ class AttendeeManagementAdapter(
     override fun getItemCount(): Int = items.size
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val nameText: TextView = itemView.findViewById(R.id.txtRegistrationTitle)
-        private val emailText: TextView = itemView.findViewById(R.id.txtRegistrationDetails)
-        private val statusText: TextView = itemView.findViewById(R.id.txtRegistrationStatus)
+        private val avatar: TextView = itemView.findViewById(R.id.txtAttendeeInitial)
+        private val nameText: TextView = itemView.findViewById(R.id.txtAttendeeName)
+        private val emailText: TextView = itemView.findViewById(R.id.txtAttendeeEmail)
+        private val pointsText: TextView = itemView.findViewById(R.id.txtAttendeePoints)
+        private val statusText: TextView = itemView.findViewById(R.id.txtAttendeeStatus)
 
-        fun bind(item: RegistrationResponse) {
-            nameText.text = item.attendeeName
-            emailText.text = item.attendeeEmail
-            
-            val isCheckedIn = item.status == RegistrationStatus.REGISTERED // Placeholder logic
-            statusText.text = if (isCheckedIn) "Checked In" else "Not Checked In"
-            statusText.setBackgroundResource(if (isCheckedIn) R.drawable.bg_green_pill else R.drawable.bg_soft_gray_pill)
-            
+        fun bind(item: OrganizerMvpAttendee) {
+            avatar.text = attendeeInitial(item.name)
+            nameText.text = item.name
+            emailText.text = item.email
+
+            if (item.points > 0) {
+                pointsText.visibility = View.VISIBLE
+                pointsText.text = "${item.points} pts"
+            } else {
+                pointsText.visibility = View.GONE
+            }
+
+            val (backgroundColor, textColor) = item.statusPalette()
+            statusText.text = item.statusBucket()
+            statusText.setBackgroundColor(backgroundColor)
+            statusText.setTextColor(textColor)
+
             itemView.setOnClickListener { onClick(item) }
         }
     }

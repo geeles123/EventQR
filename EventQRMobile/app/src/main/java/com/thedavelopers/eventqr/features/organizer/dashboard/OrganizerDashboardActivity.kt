@@ -61,34 +61,35 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
             // Stay here
         }
         findViewById<View>(R.id.navEvents).setOnClickListener {
-            openOrganizerPage(ManageEventsActivity::class.java)
+            openOrganizerPage(ManageEventsActivity::class.java, selectedEventId().takeIf { it.isNotBlank() })
         }
         findViewById<View>(R.id.navAttendees).setOnClickListener {
-            openOrganizerPlaceholder(
-                title = "Attendees",
-                message = "Attendee management details will be available in a follow-up release.",
-                selectedNav = NAV_ATTENDEES,
+            openOrganizerPage(
+                com.thedavelopers.eventqr.features.organizer.attendees.AttendeeManagementActivity::class.java,
+                selectedEventId().takeIf { it.isNotBlank() },
             )
         }
         findViewById<View>(R.id.navReports).setOnClickListener {
-            openOrganizerPlaceholder(
-                title = "Reports",
-                message = "Reports and analytics will be available in a follow-up release.",
-                selectedNav = NAV_REPORTS,
+            openOrganizerPage(
+                com.thedavelopers.eventqr.features.organizer.reports.EventReportsActivity::class.java,
+                selectedEventId().takeIf { it.isNotBlank() },
             )
         }
 
         findViewById<View>(R.id.btnManageMyEvents).setOnClickListener {
-            openOrganizerPage(ManageEventsActivity::class.java)
+            openOrganizerPage(ManageEventsActivity::class.java, selectedEventId().takeIf { it.isNotBlank() })
         }
         findViewById<View>(R.id.btnManageAttendees).setOnClickListener {
-            openOrganizerPlaceholder(
-                title = "Attendees",
-                message = "Attendee management is currently a placeholder from the dashboard.",
+            openOrganizerPage(
+                com.thedavelopers.eventqr.features.organizer.attendees.AttendeeManagementActivity::class.java,
+                selectedEventId().takeIf { it.isNotBlank() },
             )
         }
         findViewById<View>(R.id.btnManageReports).setOnClickListener {
-            openOrganizerPlaceholder("Reports", "Full dashboard analytics coming soon.")
+            openOrganizerPage(
+                com.thedavelopers.eventqr.features.organizer.reports.EventReportsActivity::class.java,
+                selectedEventId().takeIf { it.isNotBlank() },
+            )
         }
         findViewById<View>(R.id.btnManageRewards).setOnClickListener {
             openOrganizerPlaceholder(
@@ -97,7 +98,7 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
             )
         }
         findViewById<View>(R.id.btnSeeAllEvents).setOnClickListener {
-            openOrganizerPage(ManageEventsActivity::class.java)
+            openOrganizerPage(ManageEventsActivity::class.java, selectedEventId().takeIf { it.isNotBlank() })
         }
         findViewById<View>(R.id.btnDashboardRetry).setOnClickListener {
             loadDashboard()
