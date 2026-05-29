@@ -49,7 +49,7 @@ open class EventManagementHubActivity : AppCompatActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     dp(120),
                 ).apply {
-                    setMargins(-dp(16), -dp(16), -dp(16), 0)
+                    setMargins((0), (0), (0), 0)
                 }
                 // Purple gradient: left #5A45F2, right #9B8CF5
                 background = GradientDrawable(
