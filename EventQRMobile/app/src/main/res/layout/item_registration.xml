@@ -34,10 +34,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/transparent_alt"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
-            android:textColor="#312E81"
+            android:background="@drawable/bg_badge_default"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:minHeight="32dp"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="8dp"
+            android:textColor="@color/eventqr_badge_default_text"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>

@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.thedavelopers.eventqr.R
-import com.thedavelopers.eventqr.core.api.dto.RegistrationStatus
 import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.features.registrations.model.dto.RegistrationResponse
 
@@ -50,10 +49,7 @@ class RegistrationAdapter(
                 append("\nQR: ")
                 append(item.qrCredentialId?.toString() ?: "Pending")
             }
-            statusView.text = item.status.name.replace('_', ' ')
-            statusView.setBackgroundResource(
-                if (item.status == RegistrationStatus.REGISTERED) R.drawable.button_rounded else R.drawable.transparent_alt
-            )
+            RegistrationStatusBadgeStyler.bind(statusView, item.status)
         }
     }
 }

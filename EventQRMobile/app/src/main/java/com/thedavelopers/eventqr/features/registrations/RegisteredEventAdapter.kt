@@ -8,7 +8,6 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.thedavelopers.eventqr.R
-import com.thedavelopers.eventqr.core.api.dto.RegistrationStatus
 import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.features.attendee.AttendeeQrCredentialActivity
 import com.thedavelopers.eventqr.features.attendee.EXTRA_REGISTRATION_ID
@@ -47,17 +46,7 @@ class RegisteredEventAdapter : RecyclerView.Adapter<RegisteredEventAdapter.ViewH
 
         fun bind(registration: RegistrationResponse) {
             titleView.text = registration.eventTitle ?: "Registered event"
-            statusView.text = registration.status.name.lowercase().replaceFirstChar { it.uppercase() }
-            
-            val (statusColor, statusBg) = when (registration.status) {
-                RegistrationStatus.REGISTERED -> "#4F46E5" to R.drawable.bg_purple_pill
-                RegistrationStatus.ENTERED -> "#16A34A" to R.drawable.bg_green_pill
-                RegistrationStatus.CANCELLED -> "#EF4444" to R.drawable.bg_red_warning
-                else -> "#6B7280" to R.drawable.bg_soft_gray_pill
-            }
-
-            statusView.setTextColor(android.graphics.Color.parseColor(statusColor))
-            statusView.setBackgroundResource(statusBg)
+            RegistrationStatusBadgeStyler.bind(statusView, registration.status)
 
             dateTimeView.text = registration.eventStartAt?.let(DateFormatters::formatInstant) ?: "Date not specified"
             locationView.text = registration.eventLocation ?: "Location not specified"

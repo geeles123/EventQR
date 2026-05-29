@@ -24,4 +24,17 @@
     <color name="eventqr_warning">#F59E0B</color>
     <color name="eventqr_error">#EF4444</color>
     <color name="eventqr_info">#3B82F6</color>
+
+    <color name="eventqr_badge_default_bg">#E5E7EB</color>
+    <color name="eventqr_badge_default_text">#374151</color>
+    <color name="eventqr_badge_registered_bg">#EDE9FE</color>
+    <color name="eventqr_badge_registered_text">#4C1D95</color>
+    <color name="eventqr_badge_entered_bg">#D1FAE5</color>
+    <color name="eventqr_badge_entered_text">#065F46</color>
+    <color name="eventqr_badge_exited_bg">#DBEAFE</color>
+    <color name="eventqr_badge_exited_text">#1E3A8A</color>
+    <color name="eventqr_badge_cancelled_bg">#FEE2E2</color>
+    <color name="eventqr_badge_cancelled_text">#991B1B</color>
+    <color name="eventqr_badge_pending_bg">#FEF3C7</color>
+    <color name="eventqr_badge_pending_text">#92400E</color>
 </resources>

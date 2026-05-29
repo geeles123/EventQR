@@ -60,8 +60,6 @@ open class StaffDashboardActivity : AppCompatActivity(), StaffDashboardContract.
         }
 
         findViewById<TextView>(R.id.txtStaffName).text = sessionManager.getFullName() ?: sessionManager.getEmail() ?: "Staff User"
-        findViewById<TextView>(R.id.txtStaffEmail).text = sessionManager.getEmail() ?: ""
-
         findViewById<View>(R.id.btnQuickScan).setOnClickListener {
             startActivity(Intent(this, ScannerActivity::class.java))
         }
