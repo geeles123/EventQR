@@ -72,6 +72,7 @@ class DashboardPresenter(
                             isRegistered = registeredEventIds.contains(event.eventId),
                         )
                     }
+                val upcomingEvents = mappedEvents.filter { it.status.equals("Upcoming", ignoreCase = true) }
 
                 val registeredCount = if (registrationsResult is NetworkResult.Success) {
                     registeredEventIds.size
@@ -79,20 +80,27 @@ class DashboardPresenter(
                     summaryResult.data.totalRegistrations.toInt()
                 }
 
-                val upcomingCount = if (registrationsResult is NetworkResult.Success) {
+                val upcomingCount = if (eventsResult is NetworkResult.Success) {
+                    upcomingEvents.size
+                } else {
+                    summaryResult.data.totalEvents.toInt()
+                }
+
+                val completedCount = if (registrationsResult is NetworkResult.Success) {
                     registrations.count {
                         it.status != RegistrationStatus.CANCELLED &&
                             it.status != RegistrationStatus.NO_SHOW &&
-                            it.eventStartAt?.isAfter(now) == true
+                            it.eventEndAt?.isBefore(now) == true
                     }
                 } else {
-                    mappedEvents.count { it.status == "Upcoming" }
+                    0L
                 }
 
                 val summary = summaryResult.data.copy(
                     totalRegistrations = registeredCount.toLong(),
                     totalEvents = upcomingCount.toLong(),
-                    upcomingEvents = mappedEvents.take(3),
+                    totalRewards = completedCount.toLong(),
+                    upcomingEvents = upcomingEvents.take(1),
                     discoverEvents = mappedEvents.take(5),
                 )
                 view?.showSummary(summary)

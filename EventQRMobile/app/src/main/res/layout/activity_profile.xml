@@ -149,7 +149,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
                             android:layout_weight="1"
-                            android:text="My Events"
+                            android:text="My Registered Events"
                             android:textColor="#111827"
                             android:textSize="16sp"
                             android:textStyle="bold" />

@@ -48,7 +48,7 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
     private lateinit var nameText: TextView
     private lateinit var summaryEvents: TextView
     private lateinit var summaryRegistrations: TextView
-    private lateinit var summaryRewards: TextView
+    private lateinit var summaryCompleted: TextView
     private lateinit var loadingText: TextView
     private lateinit var attendeeCard: View
     private lateinit var staffCard: View
@@ -81,7 +81,7 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
         nameText = findViewById(R.id.txtDashboardName)
         summaryEvents = findViewById(R.id.txtTotalEvents)
         summaryRegistrations = findViewById(R.id.txtTotalRegistrations)
-        summaryRewards = findViewById(R.id.txtTotalRewards)
+        summaryCompleted = findViewById(R.id.txtTotalCompleted)
         loadingText = findViewById(R.id.txtDashboardLoading)
         attendeeCard = findViewById(R.id.btnAttendeeHub)
         staffCard = findViewById(R.id.btnStaffHub)
@@ -140,7 +140,7 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
 
         summaryEvents.text = summary.totalEvents.toString()
         summaryRegistrations.text = summary.totalRegistrations.toString()
-        summaryRewards.text = summary.totalRewards.toString()
+        summaryCompleted.text = summary.totalRewards.toString() // REPUPORSED from presenter
         notificationDot.visibility = if (summary.totalNotifications > 0) View.VISIBLE else View.GONE
 
         renderUpcomingEvents(summary.upcomingEvents.orEmpty())
@@ -179,9 +179,8 @@ open class DashboardActivity : AppCompatActivity(), DashboardContract.View {
             return
         }
 
-        events.forEachIndexed { index, event ->
-            upcomingEventsLayout.addView(createUpcomingEventRow(event, index == 0))
-        }
+        // Show only the closest upcoming event
+        upcomingEventsLayout.addView(createUpcomingEventRow(events[0], true))
     }
 
     private fun renderDiscoverEvents(events: List<DashboardUpcomingEvent>) {
