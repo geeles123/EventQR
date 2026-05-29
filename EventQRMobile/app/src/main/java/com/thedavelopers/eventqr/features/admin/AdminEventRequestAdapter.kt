@@ -16,8 +16,8 @@ class AdminEventRequestAdapter(
     private val onTap: (EventRequestResponse) -> Unit,
 ) : RecyclerView.Adapter<AdminEventRequestAdapter.AdminEventRequestViewHolder>() {
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault())
-    private val submittedFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.of("Asia/Manila"))
+    private val submittedFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.of("Asia/Manila"))
     private val rows = mutableListOf<EventRequestResponse>()
 
     fun submit(items: List<EventRequestResponse>) {

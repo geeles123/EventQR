@@ -22,6 +22,7 @@ class AttendeeRepository(context: Context) {
     private val apiService = ApiClient.getService(context)
     suspend fun getEvents() = safeApiCall { apiService.getAttendeeVisibleEvents() }
     suspend fun getEvent(eventId: String) = safeApiCall { apiService.getEventById(eventId) }
+    suspend fun getEventAvailability(eventId: String) = safeApiCall { apiService.getEventAvailability(eventId) }
     suspend fun createEventRequest(request: EventCreationRequestDto) = safeApiCall { apiService.createEventRequest(request) }
     suspend fun getMyEventRequests() = safeApiCall { apiService.getMyEventRequests() }
     suspend fun getMyProfile() = safeApiCall { apiService.getUsersMe() }

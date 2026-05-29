@@ -5,9 +5,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 object DateFormatters {
+    private val appZoneId: ZoneId = ZoneId.of("Asia/Manila")
     private val displayFormatter: DateTimeFormatter = DateTimeFormatter
         .ofPattern("MMM d, yyyy • h:mm a")
-        .withZone(ZoneId.systemDefault())
+        .withZone(appZoneId)
 
     fun formatInstant(value: Instant?): String {
         return if (value == null) "-" else displayFormatter.format(value)

@@ -58,3 +58,16 @@ data class AttendeeEventResponse(
     val currentAttendeeCount: Int = 0,
     val rewardsEnabled: Boolean = false,
 )
+
+data class EventAvailabilityResponse(
+    val eventId: UUID,
+    val capacity: Int,
+    val currentAttendeeCount: Int,
+    val registrationOpen: Boolean,
+    val full: Boolean,
+    val available: Boolean,
+    val message: String,
+    val serverNow: Instant? = null,
+    val registrationOpenAt: Instant? = null,
+    val registrationCloseAt: Instant? = null,
+)

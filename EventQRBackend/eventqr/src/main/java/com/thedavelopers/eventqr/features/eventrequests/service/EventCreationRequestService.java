@@ -7,12 +7,15 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.thedavelopers.eventqr.features.events.model.entity.Event;
+import com.thedavelopers.eventqr.features.events.repository.EventRepository;
 import com.thedavelopers.eventqr.features.eventrequests.model.dto.EventCreationRequestDto;
 import com.thedavelopers.eventqr.features.eventrequests.model.dto.EventRequestResponse;
 import com.thedavelopers.eventqr.features.eventrequests.model.entity.EventCreationRequest;
 import com.thedavelopers.eventqr.features.eventrequests.repository.EventCreationRequestRepository;
 import com.thedavelopers.eventqr.shared.constants.AccountRole;
 import com.thedavelopers.eventqr.shared.constants.EventRequestStatus;
+import com.thedavelopers.eventqr.shared.constants.EventStatus;
 import com.thedavelopers.eventqr.shared.exceptions.BadRequestException;
 import com.thedavelopers.eventqr.shared.exceptions.ForbiddenException;
 import com.thedavelopers.eventqr.shared.exceptions.ResourceNotFoundException;
@@ -27,14 +30,17 @@ import jakarta.persistence.PersistenceContext;
 public class EventCreationRequestService {
 
     private final EventCreationRequestRepository eventRequestRepository;
+    private final EventRepository eventRepository;
     private final AttendeeDirectoryPort attendeeDirectoryPort;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public EventCreationRequestService(EventCreationRequestRepository eventRequestRepository,
+                                       EventRepository eventRepository,
                                        AttendeeDirectoryPort attendeeDirectoryPort) {
         this.eventRequestRepository = eventRequestRepository;
+        this.eventRepository = eventRepository;
         this.attendeeDirectoryPort = attendeeDirectoryPort;
     }
 
@@ -98,6 +104,8 @@ public class EventCreationRequestService {
         request.setAdminRemarks(trimToNull(remarks));
         request.setReviewedByUserId(adminUserId);
         request.setReviewedAt(Instant.now());
+        Event linkedEvent = createOrUpdateEventFromApprovedRequest(request);
+        request.setEventId(linkedEvent.getId());
         EventCreationRequest savedRequest = eventRequestRepository.saveAndFlush(request);
         entityManager.refresh(savedRequest);
         return toResponse(savedRequest);
@@ -183,6 +191,39 @@ public class EventCreationRequestService {
                 entity.getReviewedAt(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt());
+    }
+
+    private Event createOrUpdateEventFromApprovedRequest(EventCreationRequest request) {
+        Event event = request.getEventId() == null
+                ? new Event()
+                : eventRepository.findById(request.getEventId())
+                .orElseGet(Event::new);
+
+        event.setTitle(request.getEventName().trim());
+        event.setDescription(request.getEventDescription().trim());
+        event.setLocation(trimToNull(request.getVenue()));
+        event.setRegistrationOpenAt(request.getRegistrationStartDateTime());
+        event.setRegistrationCloseAt(request.getRegistrationEndDateTime());
+        event.setEventStartAt(request.getStartDateTime());
+        event.setEventEndAt(request.getEndDateTime());
+        event.setCapacity(request.getCapacity());
+        if (event.getCurrentAttendeeCount() == null) {
+            event.setCurrentAttendeeCount(0);
+        }
+        event.setRewardsEnabled(hasRequestedFeature(request, "Rewards and points"));
+        event.setOrganizerUserId(request.getRequesterUserId());
+        event.setStatus(EventStatus.ACTIVE);
+        event.setApprovedByUserId(request.getReviewedByUserId());
+        event.setApprovedAt(request.getReviewedAt());
+        event.setRejectionReason(null);
+
+        return eventRepository.saveAndFlush(event);
+    }
+
+    private boolean hasRequestedFeature(EventCreationRequest request, String featureLabel) {
+        return request.getRequestedFeatures() != null
+                && request.getRequestedFeatures().stream()
+                .anyMatch(feature -> featureLabel.equalsIgnoreCase(feature));
     }
 }
 

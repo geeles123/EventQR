@@ -24,9 +24,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
 
 class RequestEventActivity : AppCompatActivity() {
     private lateinit var repository: AttendeeRepository
@@ -53,9 +51,8 @@ class RequestEventActivity : AppCompatActivity() {
     private lateinit var submitButton: Button
     private lateinit var viewMyRequestsButton: Button
 
-    private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     private val displayDateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a")
-    private val zoneId: ZoneId = ZoneId.systemDefault()
+    private val zoneId: ZoneId = ZoneId.of("Asia/Manila")
 
     private var startDateTimeValue: LocalDateTime? = null
     private var endDateTimeValue: LocalDateTime? = null

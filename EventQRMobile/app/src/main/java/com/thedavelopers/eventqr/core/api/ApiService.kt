@@ -13,6 +13,7 @@ import com.thedavelopers.eventqr.features.dashboard.model.dto.DashboardSummary
 import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
 import com.thedavelopers.eventqr.features.events.model.dto.EventCreationRequestDto
 import com.thedavelopers.eventqr.features.events.model.dto.EventApprovalRequest
+import com.thedavelopers.eventqr.features.events.model.dto.EventAvailabilityResponse
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequest
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequestDecisionRequest
 import com.thedavelopers.eventqr.features.events.model.dto.EventRequestResponse
@@ -132,6 +133,9 @@ interface ApiService {
 
     @GET("events/{eventId}")
     suspend fun getEventById(@Path("eventId") eventId: String): ApiResponse<AttendeeEventResponse>
+
+    @GET("events/{eventId}/availability")
+    suspend fun getEventAvailability(@Path("eventId") eventId: String): ApiResponse<EventAvailabilityResponse>
 
     @POST("event-requests")
     suspend fun createEventRequest(@Body request: EventCreationRequestDto): ApiResponse<EventRequestResponse>

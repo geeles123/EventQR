@@ -1,5 +1,6 @@
 package com.thedavelopers.eventqr.features.events.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,18 +77,46 @@ public class EventService implements EventLookupPort {
             .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId)));
         }
 
-        public EventAvailabilityResponse availability(UUID eventId) {
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
-            int capacity = safeCount(event.getCapacity());
-            int attendeeCount = safeCount(event.getCurrentAttendeeCount());
-            boolean registrationOpen = event.getStatus() == EventStatus.ACTIVE;
-            boolean full = capacity > 0 && attendeeCount >= capacity;
+    public EventAvailabilityResponse availability(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventId));
+        int capacity = safeCount(event.getCapacity());
+        int attendeeCount = safeCount(event.getCurrentAttendeeCount());
+        Instant now = Instant.now();
+
+        boolean statusActive = event.getStatus() == EventStatus.ACTIVE;
+        boolean onOrAfterRegistrationOpen = event.getRegistrationOpenAt() == null || !now.isBefore(event.getRegistrationOpenAt());
+        boolean onOrBeforeRegistrationClose = event.getRegistrationCloseAt() == null || !now.isAfter(event.getRegistrationCloseAt());
+
+        boolean registrationOpen = statusActive && onOrAfterRegistrationOpen && onOrBeforeRegistrationClose;
+        boolean full = capacity > 0 && attendeeCount >= capacity;
         boolean available = registrationOpen && !full;
-            return new EventAvailabilityResponse(event.getId(), capacity,
-                    attendeeCount, registrationOpen, full,
-                    available, available ? "Event can accept registrations" : "Event is closed or at capacity");
+
+        String message;
+        if (!statusActive) {
+            message = "Event is not active";
+        } else if (!onOrAfterRegistrationOpen) {
+            message = "Registration not open yet";
+        } else if (!onOrBeforeRegistrationClose) {
+            message = "Registration is closed";
+        } else if (full) {
+            message = "Event is at capacity";
+        } else {
+            message = "Event can accept registrations";
         }
+
+        return new EventAvailabilityResponse(
+                event.getId(),
+                capacity,
+                attendeeCount,
+                registrationOpen,
+                full,
+                available,
+                message,
+                now,
+                event.getRegistrationOpenAt(),
+                event.getRegistrationCloseAt());
+    }
 
         public EventResponse update(UUID eventId, EventRequest request) {
             Event event = eventRepository.findById(eventId)
