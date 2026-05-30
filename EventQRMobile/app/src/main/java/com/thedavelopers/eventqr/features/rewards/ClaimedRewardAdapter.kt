@@ -3,19 +3,33 @@ package com.thedavelopers.eventqr.features.rewards
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.thedavelopers.eventqr.R
-import com.thedavelopers.eventqr.core.util.DateFormatters
+import com.thedavelopers.eventqr.core.api.dto.RedemptionStatus
 import com.thedavelopers.eventqr.features.rewards.model.dto.RewardRedemptionResponse
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class ClaimedRewardAdapter : RecyclerView.Adapter<ClaimedRewardAdapter.ViewHolder>() {
 
     private val items = mutableListOf<RewardRedemptionResponse>()
+    private var eventTitle: String? = null
+    private var rewardNamesById: Map<String, String> = emptyMap()
+    private val displayFormatter: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("MMM d, h:mm a")
+        .withZone(ZoneId.of("Asia/Manila"))
 
-    fun submitItems(newItems: List<RewardRedemptionResponse>) {
+    fun submitItems(
+        newItems: List<RewardRedemptionResponse>,
+        eventTitle: String?,
+        rewardNamesById: Map<String, String>,
+    ) {
         items.clear()
         items.addAll(newItems)
+        this.eventTitle = eventTitle
+        this.rewardNamesById = rewardNamesById
         notifyDataSetChanged()
     }
 
@@ -31,26 +45,55 @@ class ClaimedRewardAdapter : RecyclerView.Adapter<ClaimedRewardAdapter.ViewHolde
     override fun getItemCount(): Int = items.size
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val categoryText: TextView = itemView.findViewById(R.id.txtClaimedCategory)
+        private val iconView: ImageView = itemView.findViewById(R.id.imgClaimedGift)
         private val statusText: TextView = itemView.findViewById(R.id.txtClaimedStatus)
         private val titleText: TextView = itemView.findViewById(R.id.txtClaimedTitle)
-        private val detailText: TextView = itemView.findViewById(R.id.txtClaimedDetails)
+        private val eventText: TextView = itemView.findViewById(R.id.txtClaimedEvent)
+        private val dateText: TextView = itemView.findViewById(R.id.txtClaimedDate)
+        private val pointsText: TextView = itemView.findViewById(R.id.txtClaimedPoints)
 
         fun bind(item: RewardRedemptionResponse) {
-            // Since RewardRedemptionResponse might not have reward name/category directly in this DTO, 
-            // we'd normally need a joined DTO. For now, we'll use IDs or placeholders if necessary.
-            // Assuming the UI layout has these IDs:
-            titleText.text = "Reward ID: ${item.rewardId.toString().take(8)}"
-            categoryText.text = "Redemption"
-            statusText.text = item.status.name
-            
-            detailText.text = buildString {
-                append("Points Used: ")
-                append(item.pointsSpent)
-                append("\nRedeemed At: ")
-                append(DateFormatters.formatInstant(item.redeemedAt))
-                append("\nRef: ")
-                append(item.redemptionId.toString().take(12))
+            val rewardName = rewardNamesById[item.rewardId.toString()]
+                ?: item.reason?.takeIf { it.isNotBlank() }
+                ?: "Reward"
+            val eventName = item.reason?.takeIf { it.startsWith("event:", ignoreCase = true) }?.substringAfter(":")
+                ?.trim()?.takeIf { it.isNotBlank() }
+                ?: eventTitle
+                ?: "Event"
+
+            titleText.text = rewardName
+            eventText.text = eventName
+            dateText.text = item.redeemedAt?.let { displayFormatter.format(it) } ?: "-"
+            pointsText.text = "-${kotlin.math.abs(item.pointsSpent)} pts"
+
+            iconView.setImageResource(R.drawable.ic_gift)
+            iconView.setColorFilter(android.graphics.Color.parseColor("#12B981"))
+
+            val (statusLabel, statusBackground, statusColor) = mapStatusStyle(item.status)
+            statusText.text = statusLabel
+            statusText.setBackgroundResource(statusBackground)
+            statusText.setTextColor(statusColor)
+        }
+
+        private fun mapStatusStyle(status: RedemptionStatus): Triple<String, Int, Int> {
+            return when (status) {
+                RedemptionStatus.REDEEMED -> Triple(
+                    "Approved",
+                    R.drawable.bg_green_pill,
+                    android.graphics.Color.parseColor("#047857")
+                )
+
+                RedemptionStatus.PENDING -> Triple(
+                    "Pending",
+                    R.drawable.bg_claimed_status_pending,
+                    android.graphics.Color.parseColor("#92400E")
+                )
+
+                RedemptionStatus.REJECTED -> Triple(
+                    "Rejected",
+                    R.drawable.bg_red_warning,
+                    android.graphics.Color.parseColor("#B91C1C")
+                )
             }
         }
     }

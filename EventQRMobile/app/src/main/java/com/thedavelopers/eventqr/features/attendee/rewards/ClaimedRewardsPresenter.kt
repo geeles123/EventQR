@@ -18,14 +18,24 @@ class ClaimedRewardsPresenter(
     fun loadRedemptions(eventId: String) {
         view?.showLoading(true)
         job = kotlinx.coroutines.MainScope().launch {
-            when (val result = repository.getRewardRedemptions(eventId)) {
+            when (val redemptionsResult = repository.getRewardRedemptions(eventId)) {
                 is NetworkResult.Success -> {
+                    val rewardNames = when (val rewardsResult = repository.getRewardsByEvent(eventId)) {
+                        is NetworkResult.Success -> rewardsResult.data.associate { it.rewardId.toString() to it.name }
+                        else -> emptyMap()
+                    }
+
+                    val eventTitle = when (val eventResult = repository.getEvent(eventId)) {
+                        is NetworkResult.Success -> eventResult.data.title
+                        else -> null
+                    }
+
                     view?.showLoading(false)
-                    view?.renderRedemptions(result.data)
+                    view?.renderRedemptions(redemptionsResult.data, eventTitle, rewardNames)
                 }
                 is NetworkResult.Error -> {
                     view?.showLoading(false)
-                    view?.showMessage(result.message)
+                    view?.showError(redemptionsResult.message)
                 }
                 NetworkResult.Loading -> Unit
             }

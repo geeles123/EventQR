@@ -29,6 +29,20 @@ class SessionManager(context: Context) {
             .apply()
     }
 
+    fun updateProfile(fullName: String, phone: String?, email: String?) {
+        sharedPreferences.edit()
+            .putString(KEY_FULL_NAME, fullName)
+            .putString(KEY_PHONE, phone)
+            .putString(KEY_EMAIL, email)
+            .apply()
+    }
+
+    fun setAvatarLocalPath(localPath: String?) {
+        sharedPreferences.edit()
+            .putString(KEY_AVATAR_LOCAL_PATH, localPath)
+            .apply()
+    }
+
     fun clearSession() {
         sharedPreferences.edit().clear().apply()
     }
@@ -45,6 +59,8 @@ class SessionManager(context: Context) {
 
     fun getFullName(): String? = sharedPreferences.getString(KEY_FULL_NAME, null)
 
+    fun getAvatarLocalPath(): String? = sharedPreferences.getString(KEY_AVATAR_LOCAL_PATH, null)
+
     fun hasUsableToken(): Boolean {
         return getAuthToken().orEmpty().isNotBlank()
     }
@@ -57,5 +73,6 @@ class SessionManager(context: Context) {
         private const val KEY_EMAIL = "email"
         private const val KEY_PHONE = "phone"
         private const val KEY_FULL_NAME = "full_name"
+        private const val KEY_AVATAR_LOCAL_PATH = "avatar_local_path"
     }
 }

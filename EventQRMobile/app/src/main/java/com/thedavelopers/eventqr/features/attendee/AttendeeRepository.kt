@@ -16,6 +16,10 @@ import com.thedavelopers.eventqr.features.rewards.model.dto.RewardResponse
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import java.util.UUID
 
 class AttendeeRepository(context: Context) {
@@ -28,6 +32,11 @@ class AttendeeRepository(context: Context) {
     suspend fun getMyProfile() = safeApiCall { apiService.getUsersMe() }
     suspend fun updateProfile(fullName: String, phoneNumber: String?) = safeApiCall {
         apiService.updateUsersMe(com.thedavelopers.eventqr.features.users.model.dto.ProfileUpdateRequest(fullName, phoneNumber))
+    }
+    suspend fun uploadAvatar(file: File): NetworkResult<Unit> = safeApiCall {
+        val requestBody = file.asRequestBody("image/*".toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("file", file.name, requestBody)
+        apiService.uploadAvatar(part)
     }
     suspend fun createRegistration(request: RegistrationRequest) = safeApiCall { apiService.createRegistration(request) }
     suspend fun getMyRegistrations() = safeApiCall { apiService.getMyRegistrations() }
@@ -46,6 +55,9 @@ class AttendeeRepository(context: Context) {
     suspend fun getRewardBalance(eventId: String, attendeeUserId: String) = safeApiCall { apiService.getRewardBalance(eventId, attendeeUserId) }
     suspend fun redeemReward(request: RewardRedemptionRequest) = safeApiCall { apiService.redeemReward(request) }
     suspend fun getRewardRedemptions(eventId: String) = safeApiCall { apiService.getRewardRedemptions(eventId) }
+    suspend fun getMyNotifications() = safeApiCall { apiService.getMyNotifications() }
+    suspend fun markNotificationRead(notificationId: String) = safeApiCall { apiService.markNotificationRead(notificationId) }
+    suspend fun markAllNotificationsRead() = safeApiCall { apiService.markAllNotificationsRead() }
     suspend fun getNotificationsByRecipient(recipientUserId: String) = safeApiCall { apiService.getNotificationsByRecipient(recipientUserId) }
     suspend fun getDashboardSummary() = safeApiCall { apiService.getDashboard() }
     suspend fun parseUuid(value: String?): UUID? = withContext(Dispatchers.Default) {

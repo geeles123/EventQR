@@ -4,6 +4,11 @@ import com.thedavelopers.eventqr.features.rewards.model.dto.RewardRedemptionResp
 
 interface ClaimedRewardsContract {
     interface View : AttendeeView {
-        fun renderRedemptions(items: List<RewardRedemptionResponse>)
+        fun showError(message: String)
+        fun renderRedemptions(
+            items: List<RewardRedemptionResponse>,
+            eventTitle: String?,
+            rewardNamesById: Map<String, String>,
+        )
     }
 }

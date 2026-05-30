@@ -454,6 +454,15 @@ interface ApiService {
     @POST("notifications")
     suspend fun createNotification(@Body request: NotificationRequest): ApiResponse<NotificationResponse>
 
+    @GET("notifications")
+    suspend fun getMyNotifications(): ApiResponse<List<NotificationResponse>>
+
+    @PATCH("notifications/{notificationId}/read")
+    suspend fun markNotificationRead(@Path("notificationId") notificationId: String): ApiResponse<NotificationResponse>
+
+    @PATCH("notifications/read-all")
+    suspend fun markAllNotificationsRead(): ApiResponse<Unit>
+
     @GET("notifications/recipient/{recipientUserId}")
     suspend fun getNotificationsByRecipient(@Path("recipientUserId") recipientUserId: String): ApiResponse<List<NotificationResponse>>
 

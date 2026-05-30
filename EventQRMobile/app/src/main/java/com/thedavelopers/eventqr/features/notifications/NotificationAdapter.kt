@@ -1,15 +1,20 @@
 package com.thedavelopers.eventqr.features.notifications
 
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.thedavelopers.eventqr.R
+import com.thedavelopers.eventqr.core.api.dto.NotificationStatus
 import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.features.notifications.model.dto.NotificationResponse
 
-class NotificationAdapter : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
+class NotificationAdapter(
+    private val onItemTap: (NotificationResponse) -> Unit,
+) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
     private val items = mutableListOf<NotificationResponse>()
 
@@ -31,20 +36,48 @@ class NotificationAdapter : RecyclerView.Adapter<NotificationAdapter.ViewHolder>
     override fun getItemCount(): Int = items.size
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val cardContainer: LinearLayout = itemView.findViewById(R.id.layoutNotificationCard)
+        private val iconContainer: LinearLayout = itemView.findViewById(R.id.layoutNotificationIcon)
+        private val iconView: ImageView = itemView.findViewById(R.id.imgNotificationIcon)
+        private val unreadDot: View = itemView.findViewById(R.id.viewUnreadDot)
         private val titleView: TextView = itemView.findViewById(R.id.txtNotificationTitle)
-        private val detailView: TextView = itemView.findViewById(R.id.txtNotificationDetails)
-        private val statusView: TextView = itemView.findViewById(R.id.txtNotificationStatus)
+        private val messageView: TextView = itemView.findViewById(R.id.txtNotificationMessage)
+        private val dateTimeView: TextView = itemView.findViewById(R.id.txtNotificationDateTime)
 
         fun bind(item: NotificationResponse) {
+            val isRead = item.status == NotificationStatus.READ || item.readAt != null
+
             titleView.text = item.title
-            detailView.text = buildString {
-                append(item.message)
-                append("\nRecipient: ")
-                append(item.recipientUserId)
-                append("\nRead: ")
-                append(DateFormatters.formatInstant(item.readAt))
+            messageView.text = item.message
+            dateTimeView.text = if (item.readAt != null) DateFormatters.formatInstant(item.readAt) else "Not read yet"
+
+            iconContainer.setBackgroundResource(R.drawable.bg_notification_icon_box)
+            when {
+                item.title.contains("reward", ignoreCase = true) || item.message.contains("reward", ignoreCase = true) -> {
+                    iconView.setImageResource(R.drawable.ic_gift)
+                    iconView.setColorFilter(0xFF10B981.toInt())
+                }
+
+                item.title.contains("reminder", ignoreCase = true) -> {
+                    iconView.setImageResource(R.drawable.ic_admin_notification)
+                    iconView.setColorFilter(0xFF4F46E5.toInt())
+                }
+
+                else -> {
+                    iconView.setImageResource(R.drawable.ic_check_circle_purple)
+                    iconView.setColorFilter(0xFF10B981.toInt())
+                }
             }
-            statusView.text = item.status.name
+
+            if (isRead) {
+                cardContainer.setBackgroundResource(R.drawable.bg_notification_card_read)
+                unreadDot.visibility = View.GONE
+            } else {
+                cardContainer.setBackgroundResource(R.drawable.bg_notification_card_unread)
+                unreadDot.visibility = View.VISIBLE
+            }
+
+            itemView.setOnClickListener { onItemTap(item) }
         }
     }
 }

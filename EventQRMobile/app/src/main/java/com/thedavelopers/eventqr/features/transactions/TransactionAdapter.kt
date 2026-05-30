@@ -1,6 +1,7 @@
 package com.thedavelopers.eventqr.features.transactions
 
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,12 +10,17 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.thedavelopers.eventqr.R
-import com.thedavelopers.eventqr.core.util.DateFormatters
+import com.thedavelopers.eventqr.core.api.dto.TransactionType
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
-class TransactionAdapter(private val eventTitle: String? = null) : RecyclerView.Adapter<TransactionAdapter.ViewHolder>() {
+class TransactionAdapter : RecyclerView.Adapter<TransactionAdapter.ViewHolder>() {
 
     private val items = mutableListOf<TransactionResponse>()
+    private val displayFormatter: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("MMM d, h:mm a")
+        .withZone(ZoneId.of("Asia/Manila"))
 
     fun submitItems(newItems: List<TransactionResponse>) {
         items.clear()
@@ -46,22 +52,57 @@ class TransactionAdapter(private val eventTitle: String? = null) : RecyclerView.
 
         fun bind(item: TransactionResponse) {
             val isEarned = item.pointsDelta >= 0
-            
-            titleView.text = item.reason ?: (if (isEarned) "Points Earned" else "Points Redeemed")
-            
-            eventView.text = item.eventTitle?.takeIf { it.isNotBlank() } ?: eventTitle ?: "Event"
-            timeView.text = DateFormatters.formatInstant(item.scannedAt)
-            
+            val title = mapTransactionTitle(item.transactionType)
+
+            titleView.text = title
+            eventView.text = item.eventTitle?.takeIf { it.isNotBlank() } ?: "Event"
+            timeView.text = item.scannedAt?.let { displayFormatter.format(it) } ?: "-"
+
             val deltaPrefix = if (isEarned) "+" else ""
-            pointsView.text = "$deltaPrefix${item.pointsDelta}"
+            pointsView.text = "$deltaPrefix${item.pointsDelta} pts"
             pointsView.setTextColor(if (isEarned) Color.parseColor("#10B981") else Color.parseColor("#EF4444"))
-            
-            tagView.text = if (item.transactionResult.name == "APPROVED") "Success" else "Failed"
-            tagView.setBackgroundResource(if (item.transactionResult.name == "APPROVED") R.drawable.bg_green_pill else R.drawable.bg_red_warning)
-            tagView.setTextColor(if (item.transactionResult.name == "APPROVED") Color.parseColor("#059669") else Color.parseColor("#DC2626"))
-            
-            iconLayout.setBackgroundResource(if (isEarned) R.drawable.bg_transaction_earned_icon else R.drawable.bg_transaction_redeemed_icon)
+
+            val isApproved = item.transactionResult.name == "APPROVED"
+            tagView.text = if (isApproved) "Success" else "Failed"
+            tagView.setBackgroundResource(if (isApproved) R.drawable.bg_green_pill else R.drawable.bg_red_warning)
+            tagView.setTextColor(if (isApproved) Color.parseColor("#047857") else Color.parseColor("#B91C1C"))
+
+            val iconColor = resolveIconColor(item.transactionType)
+            val background = (iconLayout.background as? GradientDrawable)?.mutate() as? GradientDrawable
+            if (background != null) {
+                background.setColor(iconColor)
+                iconLayout.background = background
+            } else {
+                iconLayout.setBackgroundResource(if (isEarned) R.drawable.bg_transaction_earned_icon else R.drawable.bg_transaction_redeemed_icon)
+            }
             trendIcon.setImageResource(if (isEarned) R.drawable.ic_trend_up else R.drawable.ic_trend_down)
+            trendIcon.setColorFilter(if (isEarned) Color.parseColor("#4F46E5") else Color.parseColor("#059669"))
+        }
+
+        private fun mapTransactionTitle(type: TransactionType): String {
+            return when (type) {
+                TransactionType.ENTRY -> "Event Entry"
+                TransactionType.ATTENDANCE -> "Session Attendance"
+                TransactionType.BOOTH_VISIT -> "Booth Visit"
+                TransactionType.REWARD_REDEMPTION,
+                TransactionType.REWARD_REDEMPTION_SCAN -> "Reward Redemption"
+                TransactionType.EXIT -> "Event Exit"
+                else -> type.name.lowercase().replace('_', ' ').split(' ').joinToString(" ") { word ->
+                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                }
+            }
+        }
+
+        private fun resolveIconColor(type: TransactionType): Int {
+            return when (type) {
+                TransactionType.ENTRY -> Color.parseColor("#E8EAFE")
+                TransactionType.ATTENDANCE -> Color.parseColor("#EEE8FF")
+                TransactionType.BOOTH_VISIT -> Color.parseColor("#E6F7FF")
+                TransactionType.REWARD_REDEMPTION,
+                TransactionType.REWARD_REDEMPTION_SCAN -> Color.parseColor("#EAFDF3")
+                TransactionType.EXIT -> Color.parseColor("#F2F4F7")
+                else -> Color.parseColor("#EEF2FF")
+            }
         }
     }
 }

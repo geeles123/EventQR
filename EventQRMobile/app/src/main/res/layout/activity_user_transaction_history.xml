@@ -1,203 +1,264 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/eventqr_bg"
     android:orientation="vertical">
 
-    <!-- Custom App Bar -->
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/back_btn"
-            android:contentDescription="Back"
-            app:tint="#111111"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
-            android:layout_toEndOf="@id/btnBack"
-            android:text="Transaction History"
-            android:textColor="#111111"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-    </RelativeLayout>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="20dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/txtHistoryEventTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Annual Tech Summit 2026"
-                android:textColor="#111827"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <!-- Points Summary Card -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Event Points Summary"
-                        android:textColor="#111111"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Points Earned"
-                            android:textColor="#6B7280"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/txtHistoryTotalEarned"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:text="+200"
-                            android:textColor="#10B981"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Points Redeemed"
-                            android:textColor="#6B7280"
-                            android:textSize="14sp" />
-                        <TextView
-                            android:id="@+id/txtHistoryTotalRedeemed"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:text="-100"
-                            android:textColor="#EF4444"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="16dp"
-                        android:background="#F3F4F6" />
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Current Balance"
-                            android:textColor="#111111"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/txtHistoryCurrentBalance"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:text="100 pts"
-                            android:textColor="#111111"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:src="@drawable/back_btn" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:text="Recent Transactions"
-                android:textColor="#6B7280"
-                android:textSize="14sp"
+                android:layout_marginStart="10dp"
+                android:text="Attendee / Transaction History"
+                android:textColor="@color/eventqr_text"
+                android:textSize="20sp"
                 android:textStyle="bold" />
+        </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerTransactions"
-                android:layout_width="match_parent"
+        <Spinner
+            android:id="@+id/spinnerEventFilter"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_history_filter"
+            android:paddingHorizontal="14dp"
+            android:spinnerMode="dropdown" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_history_summary_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="14dp">
+
+            <TextView
+                android:id="@+id/txtHistoryTransactionCount"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:nestedScrollingEnabled="false" />
+                android:layout_weight="1"
+                android:text="0 transactions"
+                android:textColor="@color/eventqr_muted"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/txtHistoryNetPoints"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+0 pts net"
+                android:textColor="@color/eventqr_success"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="8dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerTransactions"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:id="@+id/progressTransactionsLoading"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/txtTransactionsEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:text="No transactions available."
-                android:textColor="#6B7280"
+                android:textColor="@color/eventqr_muted"
+                android:textSize="16sp"
                 android:visibility="gone" />
 
             <TextView
                 android:id="@+id/txtTransactionsError"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:text="Unable to load transactions."
-                android:textColor="#B91C1C"
+                android:textColor="@color/eventqr_error"
+                android:textSize="14sp"
                 android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnTransactionsRetry"
+                android:layout_width="140dp"
+                android:layout_height="44dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_primary_button"
+                android:text="Retry"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="76dp"
+        android:background="@drawable/bg_bottom_nav"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp">
+
+        <LinearLayout
+            android:id="@+id/navDashboard"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imgNavDashboard"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_nav_icon_inactive"
+                android:contentDescription="Dashboard"
+                android:padding="8dp"
+                android:src="@drawable/ic_nav_home"
+                android:tint="#000000" />
 
             <TextView
-                android:id="@+id/txtTransactionsLoading"
-                android:layout_width="match_parent"
+                android:id="@+id/txtNavDashboard"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:gravity="center"
-                android:text="Loading..."
+                android:layout_marginTop="6dp"
+                android:text="Dashboard"
                 android:textColor="#6B7280"
-                android:visibility="gone" />
-
-            <!-- Supporting Hidden Views for backward compatibility -->
-            <EditText android:id="@+id/edtTransactionsEventId" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <Button android:id="@+id/btnLoadTransactions" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-
+                android:textSize="12sp"
+                android:textStyle="bold" />
         </LinearLayout>
-    </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/navEvents"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imgNavEvents"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_nav_icon_inactive"
+                android:contentDescription="Events"
+                android:padding="8dp"
+                android:src="@drawable/ic_nav_calendar"
+                android:tint="#000000" />
+
+            <TextView
+                android:id="@+id/txtNavEvents"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Events"
+                android:textColor="#6B7280"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navRewards"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imgNavRewards"
+                android:layout_width="39dp"
+                android:layout_height="39dp"
+                android:background="@drawable/bg_nav_icon_inactive"
+                android:contentDescription="Rewards"
+                android:padding="8dp"
+                android:src="@drawable/ic_nav_gift"
+                android:tint="#000000" />
+
+            <TextView
+                android:id="@+id/txtNavRewards"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:text="Rewards"
+                android:textColor="#6B7280"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navProfile"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imgNavProfile"
+                android:layout_width="39dp"
+                android:layout_height="39dp"
+                android:background="@drawable/bg_nav_icon_active"
+                android:contentDescription="Profile"
+                android:padding="8dp"
+                android:src="@drawable/ic_nav_profile"
+                android:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/txtNavProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:text="Profile"
+                android:textColor="#312E81"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>
