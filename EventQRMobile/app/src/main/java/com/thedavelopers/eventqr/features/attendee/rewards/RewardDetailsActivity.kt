@@ -14,6 +14,8 @@ open class RewardDetailsActivity : AppCompatActivity(), RewardsContract.View {
     private var eventId: String = ""
     private var rewardId: String = ""
     private var pointsRequired: Int = 0
+    private var stockQuantity: Int = -1
+    private var currentBalance: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,11 +25,18 @@ open class RewardDetailsActivity : AppCompatActivity(), RewardsContract.View {
         eventId = intent.getStringExtra(EXTRA_EVENT_ID).orEmpty()
         rewardId = intent.getStringExtra(EXTRA_REWARD_ID).orEmpty()
         pointsRequired = intent.getIntExtra(EXTRA_REWARD_POINTS, 0)
+        stockQuantity = intent.getIntExtra(EXTRA_REWARD_STOCK, -1)
 
         findViewById<View>(R.id.btnBack)?.setOnClickListener { finish() }
 
-        findViewById<TextView>(R.id.txtRewardTitle)?.text = intent.getStringExtra(EXTRA_REWARD_NAME)
+        val rewardName = intent.getStringExtra(EXTRA_REWARD_NAME).orEmpty().ifBlank { "Reward" }
+        findViewById<TextView>(R.id.txtRewardTitle)?.text = rewardName
+        findViewById<TextView>(R.id.txtRewardDescription)?.text = "Redeem this reward using your event points."
         findViewById<TextView>(R.id.txtPointsValue)?.text = pointsRequired.toString()
+        findViewById<TextView>(R.id.txtRewardRemaining)?.text = formatRemainingStock()
+        findViewById<TextView>(R.id.txtRewardExpires)?.text = "At event end"
+        findViewById<TextView>(R.id.txtUserPoints)?.text = "0 pts"
+        updateAvailabilityUi()
 
         val userId = SessionManager(this).getUserId()
         if (eventId.isNotBlank() && userId != null) {
@@ -40,6 +49,7 @@ open class RewardDetailsActivity : AppCompatActivity(), RewardsContract.View {
     }
 
     override fun showLoading(isLoading: Boolean) = Unit
+
     override fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
@@ -49,18 +59,56 @@ open class RewardDetailsActivity : AppCompatActivity(), RewardsContract.View {
     }
 
     override fun showBalance(balance: com.thedavelopers.eventqr.features.rewards.model.dto.PointBalanceResponse) {
-        if (balance.pointsBalance < pointsRequired) {
-            findViewById<View>(R.id.warningBox)?.visibility = View.VISIBLE
-            findViewById<TextView>(R.id.txtWarningMessage)?.text =
-                "You need ${pointsRequired - balance.pointsBalance} more points to redeem this reward. Current balance: ${balance.pointsBalance} points."
-            findViewById<Button>(R.id.btnRedeemReward)?.isEnabled = false
-            findViewById<Button>(R.id.btnRedeemReward)?.alpha = 0.5f
-        } else {
-            findViewById<View>(R.id.warningBox)?.visibility = View.GONE
-            findViewById<Button>(R.id.btnRedeemReward)?.isEnabled = true
-            findViewById<Button>(R.id.btnRedeemReward)?.alpha = 1.0f
-        }
+        currentBalance = balance.pointsBalance
+        findViewById<TextView>(R.id.txtUserPoints)?.text = "${balance.pointsBalance} pts"
+        updateAvailabilityUi()
     }
 
     override fun renderRewards(items: List<com.thedavelopers.eventqr.features.rewards.model.dto.RewardResponse>) = Unit
+
+    private fun updateAvailabilityUi() {
+        val missingPoints = (pointsRequired - currentBalance).coerceAtLeast(0)
+        val isOutOfStock = stockQuantity == 0
+        val canRedeem = missingPoints == 0 && !isOutOfStock
+        val redeemButton = findViewById<Button>(R.id.btnRedeemReward)
+        val warning = findViewById<TextView>(R.id.warningBox)
+        val status = findViewById<TextView>(R.id.txtRewardStatus)
+
+        if (isOutOfStock) {
+            status?.text = "Out of Stock"
+            status?.setBackgroundResource(R.drawable.bg_red_warning)
+            status?.setTextColor(0xFFB91C1C.toInt())
+            warning?.visibility = View.VISIBLE
+            warning?.text = "This reward is currently out of stock."
+            redeemButton?.isEnabled = false
+            redeemButton?.alpha = 0.65f
+            redeemButton?.text = "Out of Stock"
+            return
+        }
+
+        status?.text = "Available"
+        status?.setBackgroundResource(R.drawable.bg_green_pill)
+        status?.setTextColor(0xFF065F46.toInt())
+
+        if (canRedeem) {
+            warning?.visibility = View.GONE
+            redeemButton?.isEnabled = true
+            redeemButton?.alpha = 1.0f
+            redeemButton?.text = "Redeem Reward"
+        } else {
+            warning?.visibility = View.VISIBLE
+            warning?.text = "You need $missingPoints more points to redeem this reward."
+            redeemButton?.isEnabled = false
+            redeemButton?.alpha = 0.65f
+            redeemButton?.text = "Need $missingPoints more points"
+        }
+    }
+
+    private fun formatRemainingStock(): String {
+        return if (stockQuantity < 0) {
+            "Stock unavailable"
+        } else {
+            "$stockQuantity left"
+        }
+    }
 }
