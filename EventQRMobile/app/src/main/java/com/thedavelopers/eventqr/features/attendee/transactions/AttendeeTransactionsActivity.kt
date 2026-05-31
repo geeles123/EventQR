@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.features.transactions.TransactionAdapter
 import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResponse
@@ -18,6 +19,7 @@ import com.thedavelopers.eventqr.features.transactions.model.dto.TransactionResp
 open class AttendeeTransactionsActivity : AppCompatActivity(), TransactionHistoryContract.View {
     private lateinit var presenter: TransactionHistoryPresenter
     private lateinit var adapter: TransactionAdapter
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var loadingView: ProgressBar
     private lateinit var emptyText: TextView
     private lateinit var errorText: TextView
@@ -39,6 +41,7 @@ open class AttendeeTransactionsActivity : AppCompatActivity(), TransactionHistor
 
         presenter = TransactionHistoryPresenter(this, AttendeeRepository(this))
 
+        swipeRefresh = findViewById(R.id.swipeRefreshTransactions)
         loadingView = findViewById(R.id.progressTransactionsLoading)
         emptyText = findViewById(R.id.txtTransactionsEmpty)
         errorText = findViewById(R.id.txtTransactionsError)
@@ -50,6 +53,7 @@ open class AttendeeTransactionsActivity : AppCompatActivity(), TransactionHistor
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         retryButton.setOnClickListener { presenter.load(null) }
+        swipeRefresh.setOnRefreshListener { presenter.load(null) }
 
         pendingInitialEventId = intent.getStringExtra(EXTRA_EVENT_ID).orEmpty().ifBlank { null }
 
@@ -68,12 +72,16 @@ open class AttendeeTransactionsActivity : AppCompatActivity(), TransactionHistor
     }
 
     override fun showLoading(isLoading: Boolean) {
-        loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        if (!swipeRefresh.isRefreshing) {
+            loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
         if (isLoading) {
             retryButton.visibility = View.GONE
             errorText.visibility = View.GONE
             emptyText.visibility = View.GONE
             recyclerView.visibility = View.GONE
+        } else {
+            swipeRefresh.isRefreshing = false
         }
     }
 
@@ -82,6 +90,7 @@ open class AttendeeTransactionsActivity : AppCompatActivity(), TransactionHistor
     }
 
     override fun showError(message: String) {
+        swipeRefresh.isRefreshing = false
         loadingView.visibility = View.GONE
 
         summaryCountText.text = "0 transactions"
@@ -95,6 +104,7 @@ open class AttendeeTransactionsActivity : AppCompatActivity(), TransactionHistor
     }
 
     override fun renderTransactions(items: List<TransactionResponse>) {
+        swipeRefresh.isRefreshing = false
         loadingView.visibility = View.GONE
         retryButton.visibility = View.GONE
         errorText.visibility = View.GONE
