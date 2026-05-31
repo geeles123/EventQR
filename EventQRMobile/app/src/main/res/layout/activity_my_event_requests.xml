@@ -35,64 +35,70 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <FrameLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshMyEventRequests"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="14dp">
+        android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerMyEventRequests"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:nestedScrollingEnabled="true"
-            android:paddingBottom="8dp" />
+            android:padding="14dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:orientation="vertical">
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerMyEventRequests"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="true"
+                android:paddingBottom="8dp" />
 
-            <ProgressBar
-                android:id="@+id/progressMyRequestsLoading"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/txtMyRequestsEmpty"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center"
                 android:gravity="center"
-                android:text="No event requests yet."
-                android:textColor="@color/eventqr_muted"
-                android:textSize="16sp"
-                android:visibility="gone" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/txtMyRequestsError"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="Unable to load event requests."
-                android:textColor="@color/eventqr_error"
-                android:textSize="14sp"
-                android:visibility="gone" />
+                <ProgressBar
+                    android:id="@+id/progressMyRequestsLoading"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:visibility="gone" />
 
-            <Button
-                android:id="@+id/btnMyRequestsRetry"
-                android:layout_width="140dp"
-                android:layout_height="44dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_primary_button"
-                android:text="Retry"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:visibility="gone" />
-        </LinearLayout>
-    </FrameLayout>
+                <TextView
+                    android:id="@+id/txtMyRequestsEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="No event requests yet."
+                    android:textColor="@color/eventqr_muted"
+                    android:textSize="16sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/txtMyRequestsError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Unable to load event requests."
+                    android:textColor="@color/eventqr_error"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btnMyRequestsRetry"
+                    android:layout_width="140dp"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_primary_button"
+                    android:text="Retry"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>
