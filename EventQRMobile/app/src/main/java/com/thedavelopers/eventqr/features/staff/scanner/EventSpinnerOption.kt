@@ -1,3 +1,10 @@
 package com.thedavelopers.eventqr.features.staff
 
-data class EventSpinnerOption(val id: String, val label: String, val canScan: Boolean)
+import java.time.Instant
+
+data class EventSpinnerOption(
+    val id: String,
+    val label: String,
+    val canScan: Boolean,
+    val eventStartAt: Instant? = null,
+)
