@@ -29,6 +29,7 @@
             android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:ellipsize="end"
+            android:fontFamily="sans-serif-black"
             android:maxLines="1"
             android:text="Reward Details"
             android:textColor="@color/eventqr_text"
@@ -82,6 +83,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
                     android:ellipsize="end"
+                    android:fontFamily="sans-serif-black"
                     android:gravity="center"
                     android:maxLines="2"
                     android:text="Reward Title"
@@ -103,13 +105,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="22dp"
-                    android:gravity="center_vertical"
+                    android:baselineAligned="true"
+                    android:baselineAlignedChildIndex="0"
                     android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/txtPointsValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:includeFontPadding="false"
                         android:text="100"
                         android:textColor="#FFFFFF"
                         android:textSize="36sp"
@@ -119,6 +124,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="5dp"
+                        android:includeFontPadding="false"
                         android:text="pts"
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"
@@ -272,17 +278,24 @@
         </LinearLayout>
     </ScrollView>
 
-    <Button
-        android:id="@+id/btnRedeemReward"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="14dp"
-        android:background="@drawable/bg_bottom_redeem_button"
-        android:text="Redeem Reward"
-        android:textAllCaps="false"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="18dp">
+
+        <Button
+            android:id="@+id/btnRedeemReward"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_bottom_redeem_button"
+            android:text="Redeem Reward"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>
