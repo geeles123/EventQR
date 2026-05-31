@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.features.registrations.RegisteredEventAdapter
 import com.thedavelopers.eventqr.features.registrations.model.dto.RegistrationResponse
@@ -16,6 +17,7 @@ import java.time.Instant
 open class RegisteredEventsActivity : AppCompatActivity(), RegisteredEventsContract.View {
     private lateinit var presenter: RegisteredEventsPresenter
     private lateinit var adapter: RegisteredEventAdapter
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var loadingView: View
     private lateinit var chipAll: TextView
     private lateinit var chipRegistered: TextView
@@ -29,6 +31,7 @@ open class RegisteredEventsActivity : AppCompatActivity(), RegisteredEventsContr
         setContentView(R.layout.activity_user_registered_events)
 
         presenter = RegisteredEventsPresenter(this, AttendeeRepository(this))
+        swipeRefresh = findViewById(R.id.swipeRefreshRegisteredEvents)
         loadingView = findViewById(R.id.txtRegisteredEventsEmpty)
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
@@ -42,6 +45,7 @@ open class RegisteredEventsActivity : AppCompatActivity(), RegisteredEventsContr
         chipAll.setOnClickListener { selectFilter(RegisteredEventFilter.ALL) }
         chipRegistered.setOnClickListener { selectFilter(RegisteredEventFilter.REGISTERED) }
         chipCompleted.setOnClickListener { selectFilter(RegisteredEventFilter.COMPLETED) }
+        swipeRefresh.setOnRefreshListener { presenter.load() }
 
         adapter = RegisteredEventAdapter()
         findViewById<RecyclerView>(R.id.recyclerRegisteredEvents).apply {
@@ -100,15 +104,22 @@ open class RegisteredEventsActivity : AppCompatActivity(), RegisteredEventsContr
     }
 
     override fun showLoading(isLoading: Boolean) {
-        loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        if (!swipeRefresh.isRefreshing) {
+            loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
         findViewById<RecyclerView>(R.id.recyclerRegisteredEvents).visibility = if (isLoading) View.GONE else View.VISIBLE
+        if (!isLoading) {
+            swipeRefresh.isRefreshing = false
+        }
     }
 
     override fun showMessage(message: String) {
+        swipeRefresh.isRefreshing = false
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun showRegisteredEvents(items: List<RegistrationResponse>) {
+        swipeRefresh.isRefreshing = false
         allItems = items
         renderFilteredEvents()
     }
