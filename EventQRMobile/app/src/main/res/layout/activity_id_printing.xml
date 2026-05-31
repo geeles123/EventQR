@@ -1,90 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F3F4F6"
-    android:fillViewport="true">
+    android:orientation="vertical">
 
-    <LinearLayout
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="8dp"
+        android:text="ID Printing"
+        android:textColor="@color/black"
+        android:textSize="26sp"
+        android:textStyle="bold" />
 
-        <TextView
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="false">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ID Printing"
-            android:textColor="@color/black"
-            android:textSize="26sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="12dp">
 
-        <EditText
-            android:id="@+id/edtPrintEventId"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/edittext_bg"
-            android:hint="Event ID"
-            android:padding="14dp" />
+            <EditText
+                android:id="@+id/edtPrintEventId"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/edittext_bg"
+                android:hint="Event ID"
+                android:padding="14dp"
+                android:singleLine="true" />
 
-        <EditText
-            android:id="@+id/edtPrintQrCredentialId"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/edittext_bg"
-            android:hint="QR Credential ID"
-            android:padding="14dp" />
+            <EditText
+                android:id="@+id/edtPrintQrCredentialId"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_bg"
+                android:hint="QR Credential ID"
+                android:padding="14dp"
+                android:singleLine="true" />
 
-        <EditText
-            android:id="@+id/edtPrintStaffUserId"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/edittext_bg"
-            android:hint="Staff User ID"
-            android:padding="14dp" />
+            <EditText
+                android:id="@+id/edtPrintStaffUserId"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_bg"
+                android:hint="Staff User ID"
+                android:padding="14dp"
+                android:singleLine="true" />
 
-        <CheckBox
-            android:id="@+id/chkReprint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Reprint" />
+            <CheckBox
+                android:id="@+id/chkReprint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Reprint" />
 
-        <Button
-            android:id="@+id/btnPrintId"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/button_rounded"
-            android:text="Print"
-            android:textAllCaps="false"
-            android:textColor="@color/white" />
+            <Button
+                android:id="@+id/btnPrintId"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_rounded"
+                android:text="Print"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
 
-        <Button
-            android:id="@+id/btnLoadPrintLogs"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/transparent_alt"
-            android:text="Load Print Logs"
-            android:textAllCaps="false"
-            android:textColor="#1F2937" />
+            <Button
+                android:id="@+id/btnLoadPrintLogs"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/transparent_alt"
+                android:text="Load Print Logs"
+                android:textAllCaps="false"
+                android:textColor="#1F2937" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="20dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerIdPrintLogs"
             android:layout_width="match_parent"
-            android:layout_height="320dp"
-            android:layout_marginTop="16dp" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false" />
 
         <ProgressBar
             android:id="@+id/progressScanner"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="12dp"
+            android:layout_gravity="center"
             android:visibility="gone" />
-    </LinearLayout>
-</ScrollView>
+    </FrameLayout>
+</LinearLayout>
