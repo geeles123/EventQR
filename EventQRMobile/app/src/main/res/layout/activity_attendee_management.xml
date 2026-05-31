@@ -148,20 +148,17 @@
                     app:cardCornerRadius="18dp"
                     app:cardElevation="2dp"
                     app:cardUseCompatPadding="false">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="14dp">
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_group"
                             app:tint="#4F46E5" />
-
                         <TextView
                             android:id="@+id/txtTotalCount"
                             android:layout_width="match_parent"
@@ -171,7 +168,6 @@
                             android:textColor="@color/eventqr_text"
                             android:textSize="22sp"
                             android:textStyle="bold" />
-
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -189,20 +185,17 @@
                     app:cardCornerRadius="18dp"
                     app:cardElevation="2dp"
                     app:cardUseCompatPadding="false">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="14dp">
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_check_circle_purple"
                             app:tint="#10B981" />
-
                         <TextView
                             android:id="@+id/txtCheckedInCount"
                             android:layout_width="match_parent"
@@ -212,7 +205,6 @@
                             android:textColor="@color/eventqr_text"
                             android:textSize="22sp"
                             android:textStyle="bold" />
-
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -229,20 +221,17 @@
                     app:cardCornerRadius="18dp"
                     app:cardElevation="2dp"
                     app:cardUseCompatPadding="false">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="14dp">
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@android:drawable/ic_menu_recent_history"
                             app:tint="#F59E0B" />
-
                         <TextView
                             android:id="@+id/txtNoShowCount"
                             android:layout_width="match_parent"
@@ -252,7 +241,6 @@
                             android:textColor="@color/eventqr_text"
                             android:textSize="22sp"
                             android:textStyle="bold" />
-
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -266,40 +254,46 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <FrameLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshAttendeeManagement"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingStart="16dp"
-        android:paddingTop="18dp"
-        android:paddingEnd="16dp">
+        android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerAttendees"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:nestedScrollingEnabled="true"
-            android:paddingBottom="16dp" />
+            android:paddingStart="16dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="16dp">
 
-        <ProgressBar
-            android:id="@+id/progressAttendees"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerAttendees"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="true"
+                android:paddingBottom="16dp" />
 
-        <TextView
-            android:id="@+id/txtAttendeesEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:text="No attendees registered yet."
-            android:textColor="#6B7280"
-            android:textSize="14sp"
-            android:visibility="gone" />
-    </FrameLayout>
+            <ProgressBar
+                android:id="@+id/progressAttendees"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/txtAttendeesEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:text="No attendees registered yet."
+                android:textColor="#6B7280"
+                android:textSize="14sp"
+                android:visibility="gone" />
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <LinearLayout
         android:id="@+id/layoutBottomNavHost"
