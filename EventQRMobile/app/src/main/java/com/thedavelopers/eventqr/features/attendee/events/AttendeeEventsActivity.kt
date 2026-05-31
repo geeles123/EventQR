@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.core.util.DateFormatters
 import com.thedavelopers.eventqr.features.events.model.dto.AttendeeEventResponse
@@ -24,6 +25,7 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
     private lateinit var upcomingTab: TextView
     private lateinit var activeTab: TextView
     private lateinit var pastTab: TextView
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var adapter: AttendeeEventAdapter
     private var allEvents: List<AttendeeEventResponse> = emptyList()
     private var selectedFilter: EventFilter = EventFilter.ALL
@@ -36,6 +38,7 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         configureAttendeeBottomNav(AttendeeBottomNavItem.EVENTS)
 
         presenter = EventsPresenter(this, AttendeeRepository(this))
+        swipeRefresh = findViewById(R.id.swipeRefreshEvents)
         recyclerView = findViewById(R.id.recyclerEvents)
         emptyView = findViewById(R.id.txtEventsEmpty)
         loadingView = findViewById(R.id.txtEventsLoading)
@@ -49,6 +52,7 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
+        swipeRefresh.setOnRefreshListener { presenter.loadEvents() }
         retryButton.setOnClickListener { presenter.loadEvents() }
         allTab.setOnClickListener { selectFilter(EventFilter.ALL) }
         upcomingTab.setOnClickListener { selectFilter(EventFilter.UPCOMING) }
@@ -114,11 +118,15 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
     }
 
     override fun showLoading(isLoading: Boolean) {
-        loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        if (!swipeRefresh.isRefreshing) {
+            loadingView.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
         if (isLoading) {
             emptyView.visibility = View.GONE
             retryButton.visibility = View.GONE
             recyclerView.visibility = View.GONE
+        } else {
+            swipeRefresh.isRefreshing = false
         }
     }
 
@@ -127,12 +135,14 @@ open class AttendeeEventsActivity : AppCompatActivity(), EventsContract.View {
     }
 
     override fun showEvents(items: List<AttendeeEventResponse>) {
+        swipeRefresh.isRefreshing = false
         allEvents = items
         retryButton.visibility = View.GONE
         renderFilteredEvents()
     }
 
     override fun showError(message: String) {
+        swipeRefresh.isRefreshing = false
         recyclerView.visibility = View.GONE
         emptyView.visibility = View.VISIBLE
         emptyView.text = when (selectedFilter) {
