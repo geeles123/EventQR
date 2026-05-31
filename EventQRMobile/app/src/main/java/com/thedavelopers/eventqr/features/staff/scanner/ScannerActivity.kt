@@ -42,8 +42,8 @@ import com.thedavelopers.eventqr.core.api.dto.ScanPurposeCode
 import com.thedavelopers.eventqr.core.session.SessionManager
 import com.thedavelopers.eventqr.core.util.RoleMapper
 import com.thedavelopers.eventqr.features.scanpurposes.model.dto.ScanPurposeResponse
-import com.thedavelopers.eventqr.features.staff.EventRegistrationsActivity
 import com.thedavelopers.eventqr.features.staff.EventSpinnerOption
+import com.thedavelopers.eventqr.features.staff.StaffAssignedEventsActivity
 import com.thedavelopers.eventqr.features.staff.StaffDashboardActivity
 import com.thedavelopers.eventqr.features.staff.StaffRepository
 import com.thedavelopers.eventqr.features.staff.StaffScreenExtras
@@ -157,9 +157,7 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         }
 
         findViewById<View>(R.id.navEvents)?.setOnClickListener {
-            startActivity(Intent(this, EventRegistrationsActivity::class.java).apply {
-                selectedEvent()?.id?.let { putExtra(StaffScreenExtras.EXTRA_EVENT_ID, it) }
-            })
+            startActivity(Intent(this, StaffAssignedEventsActivity::class.java))
         }
 
         findViewById<View>(R.id.navLogs)?.setOnClickListener {
@@ -207,31 +205,19 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         super.onDestroy()
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder) {
-        startInlineCameraIfReady()
-    }
-
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        releaseInlineCamera()
-        startInlineCameraIfReady()
-    }
-
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
-        releaseInlineCamera()
-    }
+    override fun surfaceCreated(holder: SurfaceHolder) { startInlineCameraIfReady() }
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) { releaseInlineCamera(); startInlineCameraIfReady() }
+    override fun surfaceDestroyed(holder: SurfaceHolder) { releaseInlineCamera() }
 
     override fun onPreviewFrame(data: ByteArray?, camera: Camera?) {
         if (data == null || camera == null || submitInFlight || !decoding.compareAndSet(false, true)) return
         val previewSize = camera.parameters.previewSize
         val width = previewSize.width
         val height = previewSize.height
-
         decoderExecutor.execute {
             val decoded = decodeFrame(data, width, height)
             runOnUiThread {
-                if (!decoded.isNullOrBlank()) {
-                    handleInlineQrValue(decoded)
-                }
+                if (!decoded.isNullOrBlank()) handleInlineQrValue(decoded)
                 decoding.set(false)
             }
         }
@@ -240,14 +226,9 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
     override fun showEvents(items: List<EventSpinnerOption>) {
         eventOptions.clear()
         eventOptions.addAll(items)
-        val labels = items.map { it.label }
-        eventSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, labels)
+        eventSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map { it.label })
         eventSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                bindSelectedEventHeader()
-                loadSelectedPurposes()
-            }
-
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { bindSelectedEventHeader(); loadSelectedPurposes() }
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
         if (!preselectedEventId.isNullOrBlank()) {
@@ -261,14 +242,9 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
 
     override fun showPurposes(items: List<ScanPurposeResponse>) {
         val activePurposes = items.filter { it.active }
-        val selectedEventId = eventOptions.getOrNull(eventSpinner.selectedItemPosition)?.id
-        val labels = activePurposes.map { it.name }
-        Log.d(tag, "eventId=$selectedEventId loadedScanPurposeCount=${items.size} displayedOptionLabels=$labels")
-
         purposeOptions.clear()
         purposeOptions.addAll(activePurposes)
         setPurposeDropdownOpen(false)
-
         if (activePurposes.isEmpty()) {
             purposeSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("No scan purposes enabled for this event."))
             purposeSpinner.isEnabled = false
@@ -285,48 +261,21 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         }
     }
 
-    override fun appendScanResult(result: TransactionResponse) {
-        adapter.submitItems(listOf(result))
-    }
-
-    override fun showVerificationResult(result: ScanVerificationResponse) {
-        submitInFlight = false
-        Log.d(tag, "backend verification result=SUCCESS eventId=${result.eventId} scanPurposeId=${result.scanPurposeId} message=${result.message}")
-        resultText.text = result.message
-        openVerificationResult(result)
-    }
-
-    override fun showScanError(message: String) {
-        submitInFlight = false
-        Log.w(tag, "backend verification result=ERROR message=$message")
-        resultText.text = message
-        showMessage(message)
-        openRejectedResult(message)
-    }
-
-    override fun showMessage(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun showLoading(isLoading: Boolean) {
-        findViewById<View>(R.id.progressScanner).visibility = if (isLoading) View.VISIBLE else View.GONE
-        findViewById<Button>(R.id.btnSubmitScan).isEnabled = !isLoading
-    }
+    override fun appendScanResult(result: TransactionResponse) { adapter.submitItems(listOf(result)) }
+    override fun showVerificationResult(result: ScanVerificationResponse) { submitInFlight = false; resultText.text = result.message; openVerificationResult(result) }
+    override fun showScanError(message: String) { submitInFlight = false; resultText.text = message; showMessage(message); openRejectedResult(message) }
+    override fun showMessage(message: String) { Toast.makeText(this, message, Toast.LENGTH_SHORT).show() }
+    override fun showLoading(isLoading: Boolean) { findViewById<View>(R.id.progressScanner).visibility = if (isLoading) View.VISIBLE else View.GONE; findViewById<Button>(R.id.btnSubmitScan).isEnabled = !isLoading }
 
     private fun requestInlineCameraStart() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startInlineCameraIfReady()
-        } else {
-            inlineCameraStatus.text = "Allow camera access to scan QR codes"
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) startInlineCameraIfReady()
+        else { inlineCameraStatus.text = "Allow camera access to scan QR codes"; cameraPermissionLauncher.launch(Manifest.permission.CAMERA) }
     }
 
     private fun startInlineCameraIfReady() {
         if (!::inlineCameraSurface.isInitialized || camera != null) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) return
         if (!inlineCameraSurface.holder.surface.isValid) return
-
         inlineCameraStatus.text = "Point camera at attendee QR code"
         runCatching {
             camera = Camera.open().apply {
@@ -343,7 +292,6 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
                 setPreviewCallback(this@ScannerActivity)
                 startPreview()
                 scannerIcon.visibility = View.GONE
-                Log.d(tag, "inline camera started preview=${params.previewSize.width}x${params.previewSize.height} focus=${params.focusMode}")
             }
         }.onFailure {
             inlineCameraStatus.text = "Unable to start camera"
@@ -352,26 +300,8 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         }
     }
 
-    private fun releaseInlineCamera() {
-        camera?.setPreviewCallback(null)
-        runCatching { camera?.stopPreview() }
-        camera?.release()
-        camera = null
-        if (::scannerIcon.isInitialized) scannerIcon.visibility = View.VISIBLE
-    }
-
-    private fun handleInlineQrValue(rawValue: String) {
-        Log.d(tag, "inline raw QR value detected: $rawValue")
-        val parsed = parseQrPayload(rawValue)
-        if (parsed == null || parsed.qrValue.isBlank()) {
-            showMessage("QR payload format is invalid.")
-            Log.w(tag, "invalid inline QR payload raw=$rawValue")
-            return
-        }
-        qrInput.setText(parsed.qrValue)
-        qrInput.setSelection(parsed.qrValue.length)
-        submitCurrentSelection(trigger = "inline-camera")
-    }
+    private fun releaseInlineCamera() { camera?.setPreviewCallback(null); runCatching { camera?.stopPreview() }; camera?.release(); camera = null; if (::scannerIcon.isInitialized) scannerIcon.visibility = View.VISIBLE }
+    private fun handleInlineQrValue(rawValue: String) { val parsed = parseQrPayload(rawValue); if (parsed == null || parsed.qrValue.isBlank()) { showMessage("QR payload format is invalid."); return }; qrInput.setText(parsed.qrValue); qrInput.setSelection(parsed.qrValue.length); submitCurrentSelection(trigger = "inline-camera") }
 
     private fun decodeFrame(data: ByteArray, width: Int, height: Int): String? {
         val ySize = width * height
@@ -380,19 +310,10 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         val rotated90 = rotateLuma90(luma, width, height)
         val rotated180 = rotateLuma90(rotated90, height, width)
         val rotated270 = rotateLuma90(rotated180, width, height)
-
-        val candidates = listOf(
-            Triple(luma, width, height),
-            Triple(rotated90, height, width),
-            Triple(rotated180, width, height),
-            Triple(rotated270, height, width),
-        )
-
+        val candidates = listOf(Triple(luma, width, height), Triple(rotated90, height, width), Triple(rotated180, width, height), Triple(rotated270, height, width))
         for ((buffer, w, h) in candidates) {
-            val normal = decodeBinaryBitmap(buffer, w, h, invert = false)
-            if (!normal.isNullOrBlank()) return normal
-            val inverted = decodeBinaryBitmap(buffer, w, h, invert = true)
-            if (!inverted.isNullOrBlank()) return inverted
+            decodeBinaryBitmap(buffer, w, h, false)?.let { return it }
+            decodeBinaryBitmap(buffer, w, h, true)?.let { return it }
         }
         return null
     }
@@ -400,133 +321,50 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
     private fun decodeBinaryBitmap(data: ByteArray, width: Int, height: Int, invert: Boolean): String? {
         val source = PlanarYUVLuminanceSource(data, width, height, 0, 0, width, height, false)
         val bitmap = BinaryBitmap(HybridBinarizer(if (invert) source.invert() else source))
-        return try {
-            qrReader.setHints(decodeHints)
-            qrReader.decodeWithState(bitmap).text
-        } catch (_: NotFoundException) {
-            null
-        } catch (_: Exception) {
-            null
-        } finally {
-            qrReader.reset()
-        }
+        return try { qrReader.setHints(decodeHints); qrReader.decodeWithState(bitmap).text } catch (_: NotFoundException) { null } catch (_: Exception) { null } finally { qrReader.reset() }
     }
 
-    private fun rotateLuma90(input: ByteArray, width: Int, height: Int): ByteArray {
-        val output = ByteArray(width * height)
-        var index = 0
-        for (x in 0 until width) {
-            for (y in height - 1 downTo 0) {
-                output[index++] = input[y * width + x]
-            }
-        }
-        return output
-    }
-
-    private fun loadSelectedPurposes() {
-        val selectedEvent = selectedEvent()
-        if (selectedEvent != null) {
-            presenter.loadPurposes(selectedEvent.id)
-        }
-    }
-
+    private fun rotateLuma90(input: ByteArray, width: Int, height: Int): ByteArray { val output = ByteArray(width * height); var index = 0; for (x in 0 until width) { for (y in height - 1 downTo 0) { output[index++] = input[y * width + x] } }; return output }
+    private fun loadSelectedPurposes() { selectedEvent()?.let { presenter.loadPurposes(it.id) } }
     private fun selectedEvent(): EventSpinnerOption? = eventOptions.getOrNull(eventSpinner.selectedItemPosition)
-
-    private fun bindSelectedEventHeader() {
-        val event = selectedEvent()
-        selectedEventTitle.text = event?.label ?: "No assigned event"
-        selectedEventDate.text = event?.eventStartAt?.atZone(manilaZone)?.format(dateFormatter).orEmpty()
-    }
-
-    private fun bindSelectedPurposeHeader() {
-        val purpose = purposeOptions.getOrNull(purposeSpinner.selectedItemPosition)
-        selectedPurposeName.text = purpose?.displayName().orEmpty().ifBlank { "Select purpose" }
-        val pointsText = purpose?.pointsLabel().orEmpty()
-        selectedPurposePoints.text = pointsText
-        selectedPurposePoints.visibility = if (pointsText.isBlank()) View.GONE else View.VISIBLE
-        selectedPurposePoints.setTextColor(0xFF4F46E5.toInt())
-    }
+    private fun bindSelectedEventHeader() { val event = selectedEvent(); selectedEventTitle.text = event?.label ?: "No assigned event"; selectedEventDate.text = event?.eventStartAt?.atZone(manilaZone)?.format(dateFormatter).orEmpty() }
+    private fun bindSelectedPurposeHeader() { val purpose = purposeOptions.getOrNull(purposeSpinner.selectedItemPosition); selectedPurposeName.text = purpose?.displayName().orEmpty().ifBlank { "Select purpose" }; selectedPurposePoints.visibility = View.GONE }
 
     private fun renderPurposeDropdown() {
         purposeDropdown.visibility = View.GONE
         purposePopup?.dismiss()
-        purposePopup = PopupWindow(
-            buildPurposeDropdownView(),
-            selectedPurposeCard.width.takeIf { it > 0 } ?: ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            true,
-        ).apply {
+        purposePopup = PopupWindow(buildPurposeDropdownView(), selectedPurposeCard.width.takeIf { it > 0 } ?: ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
             isOutsideTouchable = true
             elevation = dp(8).toFloat()
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setOnDismissListener {
-                isPurposeDropdownOpen = false
-                purposeChevron.text = "⌄"
-            }
+            setOnDismissListener { isPurposeDropdownOpen = false; purposeChevron.text = "⌄" }
         }
     }
 
-    private fun buildPurposeDropdownView(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundResource(R.drawable.bg_card)
-            purposeOptions.forEachIndexed { index, purpose ->
+    private fun buildPurposeDropdownView(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setBackgroundResource(R.drawable.bg_card)
+        purposeOptions.forEachIndexed { index, purpose ->
+            addView(LinearLayout(this@ScannerActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(12), dp(16), dp(12))
+                setBackgroundColor(if (index == purposeSpinner.selectedItemPosition) Color.parseColor("#EEF2FF") else Color.WHITE)
+                setOnClickListener { purposeSpinner.setSelection(index, false); bindSelectedPurposeHeader(); renderPurposeDropdown(); setPurposeDropdownOpen(false) }
                 addView(LinearLayout(this@ScannerActivity).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
-                    setPadding(dp(16), dp(12), dp(16), dp(12))
-                    setBackgroundColor(if (index == purposeSpinner.selectedItemPosition) Color.parseColor("#EEF2FF") else Color.WHITE)
-                    setOnClickListener {
-                        purposeSpinner.setSelection(index, false)
-                        bindSelectedPurposeHeader()
-                        renderPurposeDropdown()
-                        setPurposeDropdownOpen(false)
-                    }
-
-                    addView(LinearLayout(this@ScannerActivity).apply {
-                        orientation = LinearLayout.VERTICAL
-                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                        addView(TextView(this@ScannerActivity).apply {
-                            text = purpose.displayName()
-                            setTextColor(if (index == purposeSpinner.selectedItemPosition) 0xFF4F46E5.toInt() else 0xFF111827.toInt())
-                            textSize = 14f
-                            setTypeface(typeface, android.graphics.Typeface.BOLD)
-                        })
-                        addView(TextView(this@ScannerActivity).apply {
-                            text = purpose.description?.takeIf { it.isNotBlank() } ?: purpose.defaultDescription()
-                            setTextColor(0xFF6B7280.toInt())
-                            textSize = 13f
-                        })
-                    })
-
-                    val pointsText = purpose.pointsLabel()
-                    if (pointsText.isNotBlank()) {
-                        addView(TextView(this@ScannerActivity).apply {
-                            text = pointsText
-                            setTextColor(0xFF10B981.toInt())
-                            textSize = 13f
-                            setTypeface(typeface, android.graphics.Typeface.BOLD)
-                        })
-                    }
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    addView(TextView(this@ScannerActivity).apply { text = purpose.displayName(); setTextColor(if (index == purposeSpinner.selectedItemPosition) 0xFF4F46E5.toInt() else 0xFF111827.toInt()); textSize = 14f; setTypeface(typeface, android.graphics.Typeface.BOLD) })
+                    addView(TextView(this@ScannerActivity).apply { text = purpose.description?.takeIf { it.isNotBlank() } ?: purpose.defaultDescription(); setTextColor(0xFF6B7280.toInt()); textSize = 13f })
                 })
-            }
+            })
         }
     }
 
     private fun setPurposeDropdownOpen(open: Boolean) {
         if (open && purposeOptions.isEmpty()) return
-        if (open) {
-            if (purposePopup == null || selectedPurposeCard.width > 0 && purposePopup?.width != selectedPurposeCard.width) {
-                renderPurposeDropdown()
-            }
-            isPurposeDropdownOpen = true
-            purposeChevron.text = "⌃"
-            purposePopup?.showAsDropDown(selectedPurposeCard, 0, 0)
-        } else {
-            purposePopup?.dismiss()
-            isPurposeDropdownOpen = false
-            purposeChevron.text = "⌄"
-        }
+        if (open) { if (purposePopup == null || selectedPurposeCard.width > 0 && purposePopup?.width != selectedPurposeCard.width) renderPurposeDropdown(); isPurposeDropdownOpen = true; purposeChevron.text = "⌃"; purposePopup?.showAsDropDown(selectedPurposeCard, 0, 0) }
+        else { purposePopup?.dismiss(); isPurposeDropdownOpen = false; purposeChevron.text = "⌄" }
     }
 
     private fun ScanPurposeResponse.displayName(): String = when (code) {
@@ -538,7 +376,6 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         ScanPurposeCode.EXIT -> "Event Exit"
         else -> name
     }
-
     private fun ScanPurposeResponse.defaultDescription(): String = when (code) {
         ScanPurposeCode.ENTRY -> "Record attendee entry"
         ScanPurposeCode.ATTENDANCE -> "Record session attendance"
@@ -549,46 +386,18 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
         else -> "Scan attendee QR credential"
     }
 
-    private fun ScanPurposeResponse.pointsLabel(): String = ""
-
     private fun submitCurrentSelection(trigger: String) {
-        val selectedEvent = selectedEvent()
-        if (selectedEvent == null) {
-            showMessage("No assigned event selected.")
-            Log.w(tag, "submit blocked: missing selected event")
-            return
-        }
-        if (purposeOptions.isEmpty()) {
-            showMessage("No scan purposes enabled for this event.")
-            Log.w(tag, "submit blocked: no enabled scan purposes eventId=${selectedEvent.id}")
-            return
-        }
-        val selectedPurpose = purposeOptions.getOrNull(purposeSpinner.selectedItemPosition)
-        if (selectedPurpose == null) {
-            showMessage("No scan purpose selected.")
-            Log.w(tag, "submit blocked: missing selected scan purpose eventId=${selectedEvent.id}")
-            return
-        }
-
+        val selectedEvent = selectedEvent() ?: return showMessage("No assigned event selected.")
+        if (purposeOptions.isEmpty()) return showMessage("No scan purposes enabled for this event.")
+        val selectedPurpose = purposeOptions.getOrNull(purposeSpinner.selectedItemPosition) ?: return showMessage("No scan purpose selected.")
         val qrValue = qrInput.text.toString().trim()
-        if (qrValue.isBlank()) {
-            showMessage("QR payload format is invalid.")
-            Log.w(tag, "submit blocked: empty QR value")
-            return
-        }
-
+        if (qrValue.isBlank()) return showMessage("QR payload format is invalid.")
         val signature = "${selectedEvent.id}|${selectedPurpose.scanPurposeId}|$qrValue"
         val now = SystemClock.elapsedRealtime()
-        if (submitInFlight || (signature == lastSubmittedSignature && now - lastSubmittedAtMs < duplicateWindowMs)) {
-            showMessage("Scan is already being processed. Please wait.")
-            Log.w(tag, "duplicate rapid submission prevented signature=$signature")
-            return
-        }
-
+        if (submitInFlight || (signature == lastSubmittedSignature && now - lastSubmittedAtMs < duplicateWindowMs)) return showMessage("Scan is already being processed. Please wait.")
         submitInFlight = true
         lastSubmittedSignature = signature
         lastSubmittedAtMs = now
-        Log.d(tag, "submit trigger=$trigger selectedEventId=${selectedEvent.id} selectedScanPurposeId=${selectedPurpose.scanPurposeId} selectedScanPurposeCode=${selectedPurpose.code} qrValue=$qrValue")
         presenter.submitScan(selectedEvent.id, selectedPurpose, qrValue, notesInput.text.toString(), staffUserId)
     }
 
@@ -635,10 +444,7 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
     private fun parseQrPayload(raw: String): ParsedQrPayload? {
         val trimmed = raw.trim()
         if (trimmed.isBlank()) return null
-        if (!(trimmed.startsWith("{") && trimmed.endsWith("}"))) {
-            return ParsedQrPayload(trimmed, null)
-        }
-
+        if (!(trimmed.startsWith("{") && trimmed.endsWith("}"))) return ParsedQrPayload(trimmed, null)
         return runCatching {
             val json = JSONObject(trimmed)
             val qrValue = firstNonBlank(json.optString("qrValue"), json.optString("qr_value"), json.optString("value"))
@@ -646,13 +452,7 @@ open class ScannerActivity : AppCompatActivity(), ScannerContract.View, SurfaceH
             qrValue?.let { ParsedQrPayload(it, qrCredentialId) }
         }.getOrNull()
     }
-
     private fun firstNonBlank(vararg values: String?): String? = values.firstOrNull { !it.isNullOrBlank() }?.trim()
-
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
-
-    private data class ParsedQrPayload(
-        val qrValue: String,
-        val qrCredentialId: String?,
-    )
+    private data class ParsedQrPayload(val qrValue: String, val qrCredentialId: String?)
 }
