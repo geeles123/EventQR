@@ -49,36 +49,42 @@
             android:textStyle="bold" />
     </RelativeLayout>
 
-    <FrameLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshStaffAssignment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerStaffAssignment"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="14dp"
-            android:paddingBottom="16dp" />
+            android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/progressStaffAssignment"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_gravity="center" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerStaffAssignment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="16dp" />
 
-        <TextView
-            android:id="@+id/txtEmptyStaff"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:paddingHorizontal="32dp"
-            android:text="@string/staff_assignment_empty"
-            android:textColor="@color/eventqr_muted"
-            android:textSize="14sp"
-            android:visibility="gone" />
-    </FrameLayout>
+            <ProgressBar
+                android:id="@+id/progressStaffAssignment"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center" />
+
+            <TextView
+                android:id="@+id/txtEmptyStaff"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:paddingHorizontal="32dp"
+                android:text="@string/staff_assignment_empty"
+                android:textColor="@color/eventqr_muted"
+                android:textSize="14sp"
+                android:visibility="gone" />
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>
