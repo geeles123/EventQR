@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.thedavelopers.eventqr.R
 import com.thedavelopers.eventqr.features.organizer.AttendeeManagementAdapter
 import com.thedavelopers.eventqr.features.organizer.EXTRA_EVENT_ID
@@ -37,6 +38,7 @@ open class AttendeeManagementActivity : AppCompatActivity() {
     private lateinit var repository: OrganizerRepository
     private lateinit var selectedEvent: OrganizerMvpEvent
     private lateinit var adapter: AttendeeManagementAdapter
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyState: TextView
     private lateinit var txtTotal: TextView
@@ -73,10 +75,15 @@ open class AttendeeManagementActivity : AppCompatActivity() {
         txtTotal = findViewById(R.id.txtTotalCount)
         txtCheckedIn = findViewById(R.id.txtCheckedInCount)
         txtNoShow = findViewById(R.id.txtNoShowCount)
+        swipeRefresh = findViewById(R.id.swipeRefreshAttendeeManagement)
         progressBar = findViewById(R.id.progressAttendees)
         emptyState = findViewById(R.id.txtAttendeesEmpty)
         eventSelectorHost = findViewById(R.id.layoutEventSelectorHost)
         bottomNavHost = findViewById(R.id.layoutBottomNavHost)
+
+        swipeRefresh.setOnRefreshListener {
+            refreshSelectedEventAttendees()
+        }
 
         val spinner: Spinner = eventSelector(repository.getApprovedOrganizerEvents(), selectedEvent.id) { event ->
             selectedEvent = event
@@ -98,11 +105,32 @@ open class AttendeeManagementActivity : AppCompatActivity() {
         loadAttendees()
     }
 
+    private fun refreshSelectedEventAttendees() {
+        val currentEventId = selectedEvent.id
+        val latestSelectedEvent = resolveSelectedEvent(repository.getApprovedOrganizerEvents(), currentEventId)
+        if (latestSelectedEvent != null) {
+            selectedEvent = latestSelectedEvent
+            repository.saveSelectedEventId(latestSelectedEvent.id)
+            saveSelectedEventId(latestSelectedEvent.id)
+            bindEventHeader()
+        }
+        loadAttendees()
+    }
+
     private fun loadAttendees() {
-        progressBar.visibility = View.VISIBLE
+        if (!swipeRefresh.isRefreshing) {
+            progressBar.visibility = View.VISIBLE
+        }
         MainScope().launch {
-            val load = repository.loadAttendeesForMvp(selectedEvent.id)
+            val eventIdAtRequestTime = selectedEvent.id
+            val load = repository.loadAttendeesForMvp(eventIdAtRequestTime)
+            if (eventIdAtRequestTime != selectedEvent.id) {
+                swipeRefresh.isRefreshing = false
+                progressBar.visibility = View.GONE
+                return@launch
+            }
             attendees = load.data
+            swipeRefresh.isRefreshing = false
             progressBar.visibility = View.GONE
             render(load)
         }
