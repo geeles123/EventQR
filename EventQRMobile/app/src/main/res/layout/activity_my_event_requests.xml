@@ -2,16 +2,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/eventqr_bg"
+    android:background="#F3F4F6"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="60dp"
-        android:background="@android:color/white"
+        android:layout_height="60dp"
+        android:background="#FFFFFF"
         android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
         <ImageButton
             android:id="@+id/btnBack"
@@ -30,8 +31,21 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="My Event Requests"
-            android:textColor="@color/eventqr_text"
-            android:textSize="28sp"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnNewRequest"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_primary_button"
+            android:gravity="center"
+            android:minWidth="78dp"
+            android:paddingHorizontal="14dp"
+            android:text="＋  New"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -43,8 +57,7 @@
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="14dp">
+            android:layout_height="match_parent">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerMyEventRequests"
@@ -52,14 +65,17 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="true"
-                android:paddingBottom="8dp" />
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="24dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp">
 
                 <ProgressBar
                     android:id="@+id/progressMyRequestsLoading"
