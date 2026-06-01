@@ -78,6 +78,10 @@ public class RegistrationService implements RegistrationLookupPort, Registration
         AttendeeDirectoryPort.AttendeeSnapshot attendeeSnapshot = attendeeDirectoryPort.findOrCreateAttendee(
                 normalizedEmail, request.fullName(), request.phoneNumber(), AccountRole.ATTENDEE);
 
+        if (eventSnapshot.organizerUserId() != null && eventSnapshot.organizerUserId().equals(attendeeSnapshot.userId())) {
+            throw new ForbiddenException("Organizers cannot register for their own event");
+        }
+
         if (registrationRepository.existsByEventIdAndAttendeeUserId(request.eventId(), attendeeSnapshot.userId())) {
             throw new ConflictException("Duplicate registration for this event and attendee");
         }
