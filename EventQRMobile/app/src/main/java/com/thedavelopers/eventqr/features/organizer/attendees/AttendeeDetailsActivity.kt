@@ -1,5 +1,6 @@
 package com.thedavelopers.eventqr.features.organizer.attendees
 
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -72,18 +73,20 @@ open class AttendeeDetailsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.txtDetailName).text = attendee.name
         findViewById<TextView>(R.id.txtDetailEmail).text = attendee.email
         findViewById<TextView>(R.id.txtDetailPhone).text = attendee.phone
-        findViewById<TextView>(R.id.txtDetailStatus).apply {
-            text = attendee.statusBucket()
-            val (bgColor, textColor) = attendee.statusPalette()
-            setBackgroundColor(bgColor)
-            setTextColor(textColor)
-        }
     }
 
     private fun renderDetails() {
         findViewById<TextView>(R.id.txtDetailEventValue).text = selectedEvent.title
         findViewById<TextView>(R.id.txtDetailRegistrationIdValue).text = attendee.id
-        findViewById<TextView>(R.id.txtDetailStatusValue).text = attendee.statusBucket()
+        findViewById<TextView>(R.id.txtDetailStatusValue).apply {
+            text = attendee.statusBucket()
+            val (bgColor, textColor) = attendee.statusPalette()
+            background = GradientDrawable().apply {
+                setColor(bgColor)
+                cornerRadius = 999f
+            }
+            setTextColor(textColor)
+        }
         findViewById<TextView>(R.id.txtDetailCheckInTimeValue).text = attendee.lastTransactionTime.ifBlank { "-" }
         findViewById<TextView>(R.id.txtDetailPointsValue).text = "${attendee.points} pts"
         findViewById<TextView>(R.id.txtDetailTransactionsValue).text = attendee.recentTransactions.size.toString()
