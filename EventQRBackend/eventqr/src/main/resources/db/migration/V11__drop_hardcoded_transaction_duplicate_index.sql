@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.transaction_logs_unique_entry_exit_attendance;
