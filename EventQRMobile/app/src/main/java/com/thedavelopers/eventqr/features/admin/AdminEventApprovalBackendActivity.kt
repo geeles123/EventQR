@@ -92,6 +92,7 @@ class AdminEventApprovalBackendActivity : AppCompatActivity() {
         navLogs = findViewById(R.id.navLogs)
 
         buttonRetry.setOnClickListener { loadRequests(showLoading = true) }
+        swipeRefresh.setColorSchemeResources(R.color.eventqr_purple)
         swipeRefresh.setOnRefreshListener { loadRequests(showLoading = false) }
     }
 
@@ -188,8 +189,9 @@ class AdminEventApprovalBackendActivity : AppCompatActivity() {
     }
 
     private fun setChipState(chip: TextView, selected: Boolean) {
-        chip.setBackgroundResource(if (selected) R.drawable.bg_segment_selected else android.R.color.transparent)
-        chip.setTextColor(if (selected) 0xFF111827.toInt() else 0xFF4B5563.toInt())
+        chip.setBackgroundResource(if (selected) R.drawable.bg_admin_request_filter_active else R.drawable.bg_admin_request_filter_inactive)
+        chip.setTextColor(if (selected) 0xFFFFFFFF.toInt() else 0xFF6B7280.toInt())
+        chip.elevation = if (selected) 2f else 1f
     }
 
     private fun setLoadingState(loading: Boolean) {
