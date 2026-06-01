@@ -189,6 +189,10 @@ public class EventCreationRequestService {
     }
 
     private EventRequestResponse toResponse(EventCreationRequest entity) {
+        boolean organizerUpgraded = attendeeDirectoryPort.findById(entity.getRequesterUserId())
+                .map(attendee -> attendee.role() == AccountRole.ORGANIZER)
+                .orElse(false);
+
         return new EventRequestResponse(
                 entity.getId(),
                 entity.getRequesterUserId(),
@@ -215,7 +219,8 @@ public class EventCreationRequestService {
                 entity.getReviewedByUserId(),
                 entity.getReviewedAt(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt());
+                entity.getUpdatedAt(),
+                organizerUpgraded);
     }
 
     private Event createOrUpdateEventFromApprovedRequest(EventCreationRequest request) {
