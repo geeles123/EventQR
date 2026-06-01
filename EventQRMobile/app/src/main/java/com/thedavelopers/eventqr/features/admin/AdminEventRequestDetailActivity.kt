@@ -196,14 +196,20 @@ class AdminEventRequestDetailActivity : AppCompatActivity() {
             EventRequestStatus.APPROVED -> {
                 pendingActionBar.visibility = View.GONE
                 upgradeContainer.visibility = View.VISIBLE
-                buttonUpgradeOrganizer.setOnClickListener {
-                    showConfirmSheet(
-                        title = "Upgrade to Organizer?",
-                        message = "This will upgrade the requester's account to Organizer role, allowing them to fully manage their event.",
-                        confirmLabel = "Upgrade",
-                        requireRemarks = false,
-                    ) {
-                        performAction(Action.UPGRADE, null)
+
+                if (request.organizerUpgraded) {
+                    setUpgradeButtonUpgradedState()
+                } else {
+                    setUpgradeButtonActiveState()
+                    buttonUpgradeOrganizer.setOnClickListener {
+                        showConfirmSheet(
+                            title = "Upgrade to Organizer?",
+                            message = "This will upgrade the requester's account to Organizer role, allowing them to fully manage their event.",
+                            confirmLabel = "Upgrade",
+                            requireRemarks = false,
+                        ) {
+                            performAction(Action.UPGRADE, null)
+                        }
                     }
                 }
             }
@@ -213,6 +219,21 @@ class AdminEventRequestDetailActivity : AppCompatActivity() {
                 upgradeContainer.visibility = View.GONE
             }
         }
+    }
+
+    private fun setUpgradeButtonActiveState() {
+        buttonUpgradeOrganizer.text = "Upgrade to Organizer"
+        buttonUpgradeOrganizer.isEnabled = true
+        buttonUpgradeOrganizer.isClickable = true
+        buttonUpgradeOrganizer.alpha = 1.0f
+    }
+
+    private fun setUpgradeButtonUpgradedState() {
+        buttonUpgradeOrganizer.text = "Upgraded"
+        buttonUpgradeOrganizer.isEnabled = false
+        buttonUpgradeOrganizer.isClickable = false
+        buttonUpgradeOrganizer.alpha = 0.65f
+        buttonUpgradeOrganizer.setOnClickListener(null)
     }
 
     private fun showConfirmSheet(
@@ -279,6 +300,7 @@ class AdminEventRequestDetailActivity : AppCompatActivity() {
                         }
                         Action.UPGRADE -> {
                             Toast.makeText(this@AdminEventRequestDetailActivity, "Requester upgraded to Organizer.", Toast.LENGTH_SHORT).show()
+                            setUpgradeButtonUpgradedState()
                             loadRequest()
                         }
                     }
@@ -335,7 +357,10 @@ class AdminEventRequestDetailActivity : AppCompatActivity() {
     private fun setActionButtonsEnabled(enabled: Boolean) {
         buttonApprove.isEnabled = enabled
         buttonReject.isEnabled = enabled
-        buttonUpgradeOrganizer.isEnabled = enabled
+        if (buttonUpgradeOrganizer.text.toString() != "Upgraded") {
+            buttonUpgradeOrganizer.isEnabled = enabled
+            buttonUpgradeOrganizer.isClickable = enabled
+        }
     }
 
     private fun formatDate(value: Instant?, formatter: DateTimeFormatter): String {
