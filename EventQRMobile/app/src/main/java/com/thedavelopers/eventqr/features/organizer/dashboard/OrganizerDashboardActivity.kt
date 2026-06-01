@@ -277,10 +277,9 @@ open class OrganizerDashboardActivity : AppCompatActivity() {
         findViewById<ProgressBar>(R.id.progressDashboardLoading).visibility = View.GONE
         val dashboardData = dashboard?.data
         val name = dashboardData?.organizerName.orEmpty().ifBlank { sessionManager.getFullName().orEmpty().ifBlank { "Organizer" } }
-        val organization = dashboardData?.organization.orEmpty().ifBlank { "Organization not set" }
 
         findViewById<TextView>(R.id.txtHeaderTitle).text = "Organizer Portal"
-        findViewById<TextView>(R.id.txtHeaderSubtitle).text = "$name • $organization"
+        findViewById<TextView>(R.id.txtHeaderSubtitle).text = name
 
         val events = load.data.approvedOnly()
         val activeEvents = events.filter { it.lifecycleStatus() != "Completed" }
