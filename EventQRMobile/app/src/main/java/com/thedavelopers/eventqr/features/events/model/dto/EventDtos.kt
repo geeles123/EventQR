@@ -8,6 +8,7 @@ data class EventRequest(
     val title: String,
     val description: String? = null,
     val location: String? = null,
+    val eventLogoUrl: String? = null,
     val category: String? = null,
     val registrationOpenAt: Instant? = null,
     val registrationCloseAt: Instant? = null,
@@ -29,6 +30,7 @@ data class EventResponse(
     val title: String,
     val description: String? = null,
     val location: String? = null,
+    val eventLogoUrl: String? = null,
     val category: String? = null,
     val registrationOpenAt: Instant? = null,
     val registrationCloseAt: Instant? = null,
@@ -49,6 +51,7 @@ data class AttendeeEventResponse(
     val title: String,
     val description: String? = null,
     val location: String? = null,
+    val eventLogoUrl: String? = null,
     val category: String? = null,
     val registrationOpenAt: Instant? = null,
     val registrationCloseAt: Instant? = null,
@@ -57,6 +60,7 @@ data class AttendeeEventResponse(
     val capacity: Int = 0,
     val currentAttendeeCount: Int = 0,
     val rewardsEnabled: Boolean = false,
+    val organizerUserId: UUID? = null,
 )
 
 data class EventAvailabilityResponse(
