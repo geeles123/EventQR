@@ -1,183 +1,182 @@
 # EventQR
 
-## Overview
+EventQR is a QR-based event registration and transaction management system for academic, organizational, and community events. It includes an Android mobile app and a Spring Boot REST API backend.
 
-EventQR is a QR-based event access and attendee transaction management system. It provides attendee-facing flows (browse events, register, view QR credentials, transaction history, rewards, notifications), staff flows (manual QR scanning, record transactions, lookup registrations, ID printing), and organizer/admin flows (event management, user/role management, scan purposes, rewards, reports, notifications). The Android app talks to a Spring Boot backend via a REST API.
+The system helps event teams manage attendee registration, QR credentials, event entry/exit, attendance, booth/session tracking, benefit claims, reward redemption, organizer tools, and administrative review workflows.
 
-Live backend API base URL used by the Android app:
+## Project Status
 
-```
-https://eventqr-backend-owoa.onrender.com/api/v1/
-```
+This repository contains the capstone/project implementation of EventQR. It is intended for demonstration, development, and academic review.
+
+Do not treat this repository as a production deployment package without first configuring your own environment variables, database, authentication settings, and deployment infrastructure.
+
+## Main Features
+
+### Attendee
+
+- Browse available events
+- View event details
+- Register for events
+- Receive and view QR credentials
+- View registered events
+- View transaction history
+- View and redeem available rewards
+- View claimed rewards and notifications
+- Edit profile information and profile photo
+
+### Staff
+
+- Select assigned events
+- Scan or manually enter attendee QR codes
+- Select scan purposes such as entry, exit, booth visit, session attendance, benefit claim, and reward redemption
+- Record event transactions
+- View assigned events and transaction logs
+
+### Organizer
+
+- Request event creation
+- Manage approved events
+- Manage attendees
+- Configure scan purposes
+- Configure transaction rules, point rules, ID templates, rewards, and staff assignments
+- View transaction logs and reports
+
+### Admin
+
+- Review event creation requests
+- Manage users and roles
+- Monitor events and audit logs
+- Manage platform-level notifications and administrative workflows
 
 ## Repository Structure
 
-Top-level layout (canonical):
-
-```
-EVENTQR/
-├── .github/
+```txt
+EventQR/
 ├── EventQRBackend/
 │   └── eventqr/
-│       ├── src/
-│       │   ├── main/
-│       │   │   ├── java/com/thedavelopers/eventqr/
-│       │   │   │   ├── EventqrApplication.java
-│       │   │   │   ├── features/
-│       │   │   │   └── shared/
-│       │   │   └── resources/
-│       │   └── test/
+│       ├── src/main/java/com/thedavelopers/eventqr/
+│       │   ├── features/
+│       │   └── shared/
+│       ├── src/main/resources/
 │       ├── pom.xml
-│       ├── Dockerfile
-│       ├── .dockerignore
-│       ├── mvnw
-│       └── mvnw.cmd
+│       └── Dockerfile
 └── EventQRMobile/
-    ├── settings.gradle.kts
+    ├── app/
+    │   ├── src/main/java/com/thedavelopers/eventqr/
+    │   │   ├── core/
+    │   │   └── features/
+    │   └── src/main/res/
     ├── build.gradle.kts
-    ├── gradle.properties
-    ├── gradlew
-    ├── gradlew.bat
-    └── app/
-        ├── build.gradle.kts
-        ├── proguard-rules.pro
-        └── src/
-            ├── androidTest/
-            ├── main/
-            │   ├── java/com/thedavelopers/eventqr/
-            │   │   ├── core/
-            │   │   ├── features/
-            │   │   ├── Landing.kt
-            │   │   ├── SignIn.kt
-            │   │   ├── Registration.kt
-            │   │   ├── Dashboard.kt
-            │   │   ├── ForgotPassword.kt
-            │   │   └── ChangePassword.kt
-            │   └── res/
-            └── test/
+    └── settings.gradle.kts
 ```
 
-Note: `EventQRBackend/eventqr/src/main` and `EventQRMobile/app/src/main` are separate project source trees that happen to share the `src/main` convention; do NOT merge or move them.
+## Architecture
 
-## Important Folder Explanations
+### Backend
 
-- `.github/` — CI/workflow files (do not delete unless intended).
-- `EventQRBackend/eventqr/` — Spring Boot backend module (Maven). Contains `pom.xml`, Dockerfile, and `src/` with Java server code.
-- `EventQRBackend/eventqr/src/main/java/com/thedavelopers/eventqr/features/` — Feature-based domain modules (controllers, services, repositories).
-- `EventQRBackend/eventqr/src/main/java/com/thedavelopers/eventqr/shared/` — Shared utilities, exceptions, DTOs, constants used across features.
-- `EventQRBackend/eventqr/src/main/resources/` — Spring resources and configuration (application properties, static files).
-- `EventQRMobile/` — Android project root. Gradle wrapper, settings, and subproject `app/`.
-- `EventQRMobile/app/src/main/java/com/thedavelopers/eventqr/core/` — Core helpers: API client, session management, common utilities.
-- `EventQRMobile/app/src/main/java/com/thedavelopers/eventqr/features/` — Screen-specific packages and presenters.
-- `EventQRMobile/app/src/main/res/layout/` — XML layouts (protected UI resources).
+- Java Spring Boot REST API
+- Maven project under `EventQRBackend/eventqr`
+- Feature-based package structure
+- Database access handled through backend services and repositories
+- REST endpoints exposed under an API version path
+- Dockerfile included for containerized deployment
 
-## Backend Architecture
+### Mobile
 
-- Spring Boot application (module at `EventQRBackend/eventqr/`).
-- Feature-based modular organization: `features/` for domain logic, `shared/` for common code.
-- Configuration via environment variables for database/Supabase and Render deployment.
-- Exposes REST API endpoints under `/api/v1/` consumed by the Android app.
-- Dockerfile present at `EventQRBackend/eventqr/Dockerfile` used for containerized deployment.
+- Native Android app written in Kotlin
+- XML-based UI layouts
+- MVP-like screen organization
+- Retrofit-based API communication
+- Session management handled inside the mobile core layer
+- QR generation/scanning and event transaction flows handled through app features
 
-## Android Architecture
+## Backend and Mobile Relationship
 
-- Kotlin Android app (classic View + XML layouts). The project uses an MVP-like pattern:
-  - `Activity` / `Fragment` act as the View.
-  - Presenters handle form validation and view logic.
-  - Repositories / API client handle network I/O and data mapping.
-- `core/` contains `ApiConfig` / `ApiClient` and session helpers.
-- `features/` contains screen-specific flows (events, registrations, transactions, scanner, admin screens).
-- QR generation uses ZXing core; camera scanning is intentionally deferred (manual input supported).
-- The app calls the backend API via Retrofit; the base URL is defined in an app API config (e.g., `ApiConfig`).
+The Android app communicates with the backend API. The mobile app should not directly access private database credentials or backend-only services. Business logic, persistence, and protected operations should remain on the backend.
 
-## Backend ↔ Mobile Relationship
+## Local Development
 
-- Backend and Mobile are separate sibling projects at the repository root. Do NOT move files between them.
-- The Android app talks to the backend REST API (not directly to Supabase). Backend handles database/auth.
-
-## Implemented Features (current)
-
-- Attendee: event browsing, event details, registration flows, QR credential lookup/generation (display), transaction history, rewards, notifications.
-- Staff: manual QR scanning workflow, transaction recording, event registration lookup, ID printing foundations.
-- Organizer/Admin: event creation/management, user/role management, scan purpose management, rewards management, reports, notification management.
-
-## Known TODOs / Limitations
-
-- Attendee-specific registered-events lookup requires a backend user-scoped registrations endpoint (missing).
-- Forgot-password and change-password have UI but no backend endpoints yet.
-- Camera-based QR scanning is deferred; manual QR input remains supported.
-
-## Build & Run
-
-Backend (run locally with Maven wrapper):
+### Backend
 
 ```bash
 cd EventQRBackend/eventqr
-./mvnw spring-boot:run       # Unix/macOS
-# Windows PowerShell
-# mvnw.cmd spring-boot:run
+./mvnw spring-boot:run
 ```
 
-Docker (build & run):
+Windows:
+
+```bat
+cd EventQRBackend\eventqr
+mvnw.cmd spring-boot:run
+```
+
+### Backend with Docker
 
 ```bash
 cd EventQRBackend/eventqr
 docker build -t eventqr-backend .
-docker run --rm -p 10000:10000 -e PORT=10000 eventqr-backend
+docker run --rm -p 10000:10000 eventqr-backend
 ```
 
-Android (assemble debug):
+### Android
 
 ```bash
 cd EventQRMobile
-./gradlew assembleDebug      # Unix/macOS
-# Windows
-# gradlew.bat assembleDebug
+./gradlew assembleDebug
 ```
 
-Open in Android Studio: open the `EventQRMobile/` folder and let Gradle sync complete.
+Windows:
 
-## Where the API base URL lives
-
-The Android app defines the backend base URL in an API config class (e.g., `ApiConfig`). Example:
-
-```
-https://eventqr-backend-owoa.onrender.com/api/v1/
+```bat
+cd EventQRMobile
+gradlew.bat assembleDebug
 ```
 
-Ensure any code changes preserve that value or make it configurable via `gradle.properties` only (do not commit secrets).
+Open the `EventQRMobile/` folder in Android Studio to run the app on an emulator or physical device.
 
-## Environment & Secrets
+## Configuration
 
-- Do NOT commit `.env`, `application-*` files containing secrets, database passwords, Supabase keys, JWT secrets, or Render environment variables.
-- Backend secrets belong in Render / Supabase environment configuration, not in the repo.
-- Android should only contain the public API base URL; do not embed private keys.
+Before running the full system, configure your own local or hosted backend environment. Required values depend on your deployment setup, but typically include:
 
-## Rules for Future AI Agents (safety-first)
+- Database connection settings
+- Authentication/JWT settings
+- File or image storage settings
+- Backend server port
+- Android backend API base URL
 
-1. Do NOT move backend files into `EventQRMobile/` or vice versa. `EventQRBackend/` and `EventQRMobile/` are siblings.
-2. Do NOT recreate or duplicate the backend. The canonical backend is `EventQRBackend/eventqr/`.
-3. Do not modify backend or Android source outside the requested task scope.
-4. Do NOT delete `src/`, `res/`, `features/`, or `core/` folders or protected XML layouts without human approval.
-5. Do NOT switch Android UI to Jetpack Compose or change the app namespace/applicationId.
-6. Do NOT connect Android directly to Supabase for core business logic; backend mediates DB access.
-7. Do NOT commit or push changes unless explicitly instructed.
-8. Always run the relevant build before proposing mergeable changes:
-   - Backend: `cd EventQRBackend/eventqr && ./mvnw spring-boot:run`
-   - Android: `cd EventQRMobile && ./gradlew assembleDebug`
-9. Preserve MVP pattern on Android and feature-modular structure on the backend.
-10. If you find unexpected `pom.xml`, `mvnw`, `Dockerfile`, or `EventQRBackend` inside `EventQRMobile`, STOP and report — do not delete without human approval.
+Do not commit real secrets, production URLs, database passwords, private API keys, service-role keys, signing keys, or local environment files.
 
-## Recommended Workflow for Changes
+Recommended approach:
 
-1. Determine whether change affects backend or mobile.
-2. Work only in the correct project folder.
-3. Inspect existing feature package and keep naming/structure consistent.
-4. Reuse existing API client/session code and adapters.
-5. Build the affected project locally and report results.
-6. Present a short changelist and test results for review.
+- Keep sensitive backend values in environment variables.
+- Keep local-only files out of version control.
+- Use placeholder/example configuration files when documenting setup.
+- Configure the Android API base URL for your own backend instance before building.
 
-## Verification & Notes
+## Security Notes for Public Repository Use
 
-- This README only updates `README.md` at the repository root.
-I inspected the repository structure to populate the tree; if any folders are missing from the listing, tell me which path to inspect and I will update the README.
+This repository should not expose:
+
+- Production database URLs or passwords
+- Supabase service-role keys or private storage keys
+- JWT secrets
+- Render or hosting environment variables
+- Personal access tokens
+- Local keystore files
+- Real user data, attendee data, QR values, or event transaction records
+
+If any of those values are accidentally committed, rotate the affected credentials immediately and remove them from the repository history if necessary.
+
+## Suggested Development Workflow
+
+1. Identify whether a change belongs to the backend or mobile project.
+2. Work inside the correct project folder.
+3. Reuse existing feature packages, DTOs, services, repositories, and UI patterns.
+4. Keep backend business logic on the backend.
+5. Keep Android changes compatible with the existing XML/MVP-style structure.
+6. Build the affected project before committing.
+7. Use clear commit messages such as `feat:`, `fix:`, `docs:`, `refactor:`, or `chore:`.
+
+## License
+
+No license has been specified yet. Add a license file before allowing external reuse or redistribution.
