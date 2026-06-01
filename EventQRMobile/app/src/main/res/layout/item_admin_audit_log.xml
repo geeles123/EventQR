@@ -1,52 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="10dp"
     android:background="@drawable/bg_admin_surface_card"
+    android:elevation="2dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingHorizontal="14dp"
-    android:paddingVertical="12dp">
+    android:paddingStart="16dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="14dp">
 
-    <View
+    <FrameLayout
         android:id="@+id/auditIconTile"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:background="@drawable/bg_admin_role_badge_green" />
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_admin_role_badge_green">
+
+        <ImageView
+            android:id="@+id/imgAuditIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="Audit log type"
+            android:src="@drawable/ic_audit_shield"
+            app:tint="#10B981" />
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="14dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/textAuditActionTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Event Request Approved"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="#111827"
             android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/textAuditActorTarget"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:text="By Admin User · Target: AI Workshop 2026"
+            android:layout_marginTop="5dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="#4B5563"
             android:textSize="13sp" />
 
         <TextView
             android:id="@+id/textAuditTimestamp"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:text="May 15, 11:00 AM"
-            android:textColor="#6B7280"
+            android:layout_marginTop="5dp"
+            android:textColor="#94A3B8"
             android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>
