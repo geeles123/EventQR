@@ -1,6 +1,9 @@
 package com.thedavelopers.eventqr.features.staff
 
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
@@ -103,6 +106,8 @@ open class StaffDashboardActivity : AppCompatActivity(), StaffDashboardContract.
         findViewById<View>(R.id.navLogs).setOnClickListener {
             startActivity(Intent(this, StaffTransactionsActivity::class.java))
         }
+
+        configureStaffDashboardBottomNav()
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshDashboard)
         swipeRefreshLayout.setColorSchemeResources(R.color.eventqr_purple)
@@ -293,7 +298,7 @@ open class StaffDashboardActivity : AppCompatActivity(), StaffDashboardContract.
         if (purposes.isEmpty()) {
             val empty = TextView(this).apply {
                 text = "No active scan purposes available."
-                setTextColor(android.graphics.Color.parseColor("#6B7280"))
+                setTextColor(Color.parseColor("#6B7280"))
                 textSize = 13f
                 setPadding(dp(8), dp(8), dp(8), dp(8))
             }
@@ -324,6 +329,32 @@ open class StaffDashboardActivity : AppCompatActivity(), StaffDashboardContract.
             ScanPurposeCode.ID_PRINT -> "ID Print"
             ScanPurposeCode.REGISTRATION_LOOKUP -> "Registration Lookup"
         }
+    }
+
+    private fun configureStaffDashboardBottomNav() {
+        styleBottomNavItem(R.id.navDashboard, active = true)
+        styleBottomNavItem(R.id.navScanner, active = false)
+        styleBottomNavItem(R.id.navEvents, active = false)
+        styleBottomNavItem(R.id.navLogs, active = false)
+    }
+
+    private fun styleBottomNavItem(containerId: Int, active: Boolean) {
+        val container = findViewById<LinearLayout?>(containerId) ?: return
+        val icon = container.getChildAt(0) as? ImageView ?: return
+        val label = container.getChildAt(1) as? TextView ?: return
+
+        icon.layoutParams = LinearLayout.LayoutParams(dp(38), dp(38))
+        icon.setPadding(dp(8), dp(8), dp(8), dp(8))
+        icon.setBackgroundResource(if (active) R.drawable.bg_nav_icon_active else R.drawable.bg_nav_icon_inactive)
+        icon.imageTintList = ColorStateList.valueOf(if (active) Color.WHITE else Color.BLACK)
+
+        label.textSize = 12f
+        label.setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+        label.setTextColor(if (active) Color.parseColor("#312E81") else Color.parseColor("#6B7280"))
+        val labelParams = (label.layoutParams as? LinearLayout.LayoutParams)
+            ?: LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        labelParams.topMargin = dp(6)
+        label.layoutParams = labelParams
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
