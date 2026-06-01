@@ -65,9 +65,21 @@ class MyEventRequestsActivity : AppCompatActivity() {
 
         btnBack.setOnClickListener { finish() }
         btnRetry.setOnClickListener { loadRequests() }
+        swipeRefresh.setColorSchemeResources(R.color.eventqr_purple)
         swipeRefresh.setOnRefreshListener { loadRequests() }
 
+        findViewById<View>(R.id.btnNewRequest).setOnClickListener {
+            startActivity(Intent(this, RequestEventActivity::class.java))
+        }
+
         loadRequests()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::adapter.isInitialized) {
+            loadRequests()
+        }
     }
 
     private fun loadRequests() {
@@ -103,6 +115,7 @@ class MyEventRequestsActivity : AppCompatActivity() {
             txtEmpty.visibility = View.VISIBLE
             recyclerRequests.visibility = View.GONE
             txtEmpty.text = "No event requests yet."
+            adapter.submitItems(emptyList())
             return
         }
 
@@ -123,22 +136,10 @@ class MyEventRequestsActivity : AppCompatActivity() {
     }
 
     private fun onRequestTapped(request: EventRequestResponse) {
-        val detailActivity = runCatching {
-            Class.forName("com.thedavelopers.eventqr.features.attendee.AttendeeEventRequestDetailActivity")
-        }.getOrNull()
-
-        if (detailActivity != null) {
-            startActivity(
-                Intent(this, detailActivity).putExtra("extra_event_request_id", request.eventRequestId.toString())
-            )
-            return
-        }
-
-        showMessage("Request details screen is not available yet.")
-    }
-
-    private fun showMessage(message: String) {
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+        startActivity(
+            Intent(this, AttendeeEventRequestDetailActivity::class.java)
+                .putExtra(AttendeeEventRequestDetailActivity.EXTRA_EVENT_REQUEST_ID, request.eventRequestId.toString())
+        )
     }
 
     private class MyEventRequestsAdapter(
