@@ -64,19 +64,18 @@ class EventQrApplication : Application() {
             view.minimumWidth = dp(activity, 40)
             view.minimumHeight = dp(activity, 40)
 
-            val params = view.layoutParams
-            if (params != null) {
+            view.layoutParams?.let { params ->
                 params.width = dp(activity, 40)
                 params.height = dp(activity, 40)
                 view.layoutParams = params
             }
 
-            val parent = view.parent as? View
-            if (isBackView(activity, parent)) {
-                parent.background = null
-                parent.setBackgroundResource(resolveBorderlessRipple(activity))
-                parent.minimumWidth = dp(activity, 40)
-                parent.minimumHeight = dp(activity, 40)
+            val parentView = view.parent as? View
+            if (parentView != null && isBackView(activity, parentView)) {
+                parentView.background = null
+                parentView.setBackgroundResource(resolveBorderlessRipple(activity))
+                parentView.minimumWidth = dp(activity, 40)
+                parentView.minimumHeight = dp(activity, 40)
             }
         }
 
