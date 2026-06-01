@@ -1,29 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/eventqr_bg"
+    android:background="#F3F4F6"
     android:orientation="vertical">
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/eventqr_card"
+        android:layout_height="52dp"
+        android:background="#FFFFFF"
         android:ellipsize="end"
+        android:gravity="center_vertical"
         android:maxLines="1"
         android:paddingHorizontal="16dp"
-        android:paddingTop="18dp"
-        android:paddingBottom="14dp"
         android:text="Audit Logs"
         android:textColor="#111827"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:paddingHorizontal="16dp"
+        android:background="#F3F4F6"
+        android:clipToPadding="false"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
         android:scrollbars="none">
 
         <LinearLayout
@@ -34,10 +38,10 @@
             <TextView
                 android:id="@+id/chipAuditAll"
                 android:layout_width="wrap_content"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_admin_filter_chip_active"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_admin_request_filter_active"
                 android:gravity="center"
-                android:minWidth="64dp"
+                android:minWidth="46dp"
                 android:paddingHorizontal="14dp"
                 android:text="All"
                 android:textColor="@android:color/white"
@@ -47,11 +51,11 @@
             <TextView
                 android:id="@+id/chipAuditApproval"
                 android:layout_width="wrap_content"
-                android:layout_height="34dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_admin_filter_chip_inactive"
+                android:background="@drawable/bg_admin_request_filter_inactive"
                 android:gravity="center"
-                android:minWidth="90dp"
+                android:minWidth="82dp"
                 android:paddingHorizontal="14dp"
                 android:text="Approval"
                 android:textColor="#6B7280"
@@ -61,11 +65,11 @@
             <TextView
                 android:id="@+id/chipAuditAccount"
                 android:layout_width="wrap_content"
-                android:layout_height="34dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_admin_filter_chip_inactive"
+                android:background="@drawable/bg_admin_request_filter_inactive"
                 android:gravity="center"
-                android:minWidth="88dp"
+                android:minWidth="78dp"
                 android:paddingHorizontal="14dp"
                 android:text="Account"
                 android:textColor="#6B7280"
@@ -75,11 +79,11 @@
             <TextView
                 android:id="@+id/chipAuditSecurity"
                 android:layout_width="wrap_content"
-                android:layout_height="34dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_admin_filter_chip_inactive"
+                android:background="@drawable/bg_admin_request_filter_inactive"
                 android:gravity="center"
-                android:minWidth="88dp"
+                android:minWidth="78dp"
                 android:paddingHorizontal="14dp"
                 android:text="Security"
                 android:textColor="#6B7280"
@@ -89,11 +93,11 @@
             <TextView
                 android:id="@+id/chipAuditNotification"
                 android:layout_width="wrap_content"
-                android:layout_height="34dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_admin_filter_chip_inactive"
+                android:background="@drawable/bg_admin_request_filter_inactive"
                 android:gravity="center"
-                android:minWidth="112dp"
+                android:minWidth="104dp"
                 android:paddingHorizontal="14dp"
                 android:text="Notification"
                 android:textColor="#6B7280"
@@ -118,8 +122,8 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:paddingHorizontal="16dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp" />
+                android:paddingTop="4dp"
+                android:paddingBottom="18dp" />
 
             <ProgressBar
                 android:id="@+id/progressAuditLoading"
@@ -135,7 +139,7 @@
                 android:layout_gravity="center"
                 android:layout_marginHorizontal="16dp"
                 android:gravity="center"
-                android:text="Audit logs are not configured yet."
+                android:text="No audit logs yet."
                 android:textColor="#6B7280"
                 android:textSize="14sp"
                 android:visibility="gone" />
@@ -151,22 +155,22 @@
         android:paddingHorizontal="20dp">
 
         <LinearLayout android:id="@+id/navDashboard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_inactive" android:contentDescription="Dashboard" android:padding="8dp" android:src="@drawable/ic_nav_home" android:tint="#000000" />
+            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_inactive" android:contentDescription="Dashboard" android:padding="8dp" android:src="@drawable/ic_nav_home" app:tint="#9CA3AF" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Dashboard" android:textColor="#6B7280" android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navRequests" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_inactive" android:contentDescription="Requests" android:padding="8dp" android:src="@drawable/ic_action_request" android:tint="#000000" />
+            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_inactive" android:contentDescription="Requests" android:padding="8dp" android:src="@drawable/ic_action_request" app:tint="#9CA3AF" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Requests" android:textColor="#6B7280" android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navAccounts" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_inactive" android:contentDescription="Accounts" android:padding="8dp" android:src="@drawable/ic_group" android:tint="#000000" />
+            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_inactive" android:contentDescription="Accounts" android:padding="8dp" android:src="@drawable/ic_group" app:tint="#9CA3AF" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Accounts" android:textColor="#6B7280" android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/navLogs" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_active" android:contentDescription="Logs" android:padding="8dp" android:src="@drawable/ic_file" android:tint="#FFFFFF" />
+            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_nav_icon_active" android:contentDescription="Logs" android:padding="8dp" android:src="@drawable/ic_file" app:tint="#FFFFFF" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Logs" android:textColor="#312E81" android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
