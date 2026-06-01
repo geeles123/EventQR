@@ -5,12 +5,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.thedavelopers.eventqr.features.organizer.model.entity.EventStaffAssignment;
 
 public interface EventStaffAssignmentRepository extends JpaRepository<EventStaffAssignment, UUID> {
 
-    List<EventStaffAssignment> findByEventId(UUID eventId);
+    @Query("select assignment from EventStaffAssignment assignment where assignment.eventId = :eventId and assignment.active = true")
+    List<EventStaffAssignment> findByEventId(@Param("eventId") UUID eventId);
 
     List<EventStaffAssignment> findByEventIdAndActiveTrue(UUID eventId);
 
